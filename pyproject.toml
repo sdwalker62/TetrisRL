@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tetris_ppo"
+name = "tetris_rl"
 version = "0.1.0"
 description = "A simple PPO network to play Tetris."
 authors = ["Athena AIML"]
