@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "tetris_rl"
 version = "0.1.0"
-description = "A simple PPO network to play Tetris."
+description = "A simple RL repository to play Tetris."
 authors = ["Athena AIML"]
 readme = "README.md"
 
