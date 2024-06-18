@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tetris_ppo"
+version = "0.1.0"
+description = "A simple PPO network to play Tetris."
+authors = ["Athena AIML"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.11.9"
+pygame = "^2.5.2"
+pearl = { git = "https://github.com/facebookresearch/Pearl.git", branch = "main" }
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
