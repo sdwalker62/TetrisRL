@@ -3,6 +3,10 @@
 	import Score from "$lib/components/Score.svelte";
     import NextTetrominoDisplay from "$lib/components/NextTetrominoDisplay.svelte";
 	import GameMode from "$lib/components/GameMode.svelte";
+    import type { PageData } from './$types';
+    export let data: PageData;
+
+    console.log(data);
 </script>
 
 <main>
