@@ -36,6 +36,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"lodash": "^4.17.21"
+		"lodash": "^4.17.21",
+		"lucide-svelte": "^0.396.0"
 	}
 }

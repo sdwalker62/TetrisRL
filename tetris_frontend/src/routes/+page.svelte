@@ -1,12 +1,18 @@
 <script lang="ts">
     import Board from "$lib/components/Board.svelte";
 	import Score from "$lib/components/Score.svelte";
+    import NextTetrominoDisplay from "$lib/components/NextTetrominoDisplay.svelte";
+	import GameMode from "$lib/components/GameMode.svelte";
 </script>
 
 <main>
     <enhanced:img id="tetris-logo" src="$lib/assets/imgs/tetris-logo.png" alt="Tetris Logo" />
     <div id="game">
-        <Score />
+        <div id="sidebar">
+            <Score />
+            <NextTetrominoDisplay />
+            <GameMode />
+        </div>
         <Board />
     </div>
     
@@ -17,10 +23,11 @@
     main {
         display: flex;
         flex-direction: column;
+        gap: 0px;
         height: 100vh;
         width: 100vw;
         background: var(--bg-color);
-        padding: 20px;
+        padding: 0px;
         align-items: center;
     }
 
@@ -30,10 +37,16 @@
         
     }
 
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 0px;
+    }
+
     #tetris-logo {
         height: 10vh;
         width: var(--size);
-        padding: 10px;
+        padding: 20px;
         justify-self: flex-start;
     }
 
