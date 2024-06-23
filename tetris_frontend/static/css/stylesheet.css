@@ -1,0 +1,9 @@
+@import url(reset.css);
+
+:root {
+	box-sizing: border-box;
+	--bg-color: #000000;
+	--color-1: #cf0a0a;
+	--color-2: #dc5f00;
+	--text-color: #eeeeee;
+}
