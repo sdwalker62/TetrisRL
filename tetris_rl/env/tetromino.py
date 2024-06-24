@@ -9,18 +9,25 @@ class Tetromino:
         match type:
             case "I":
                 self.__class__ = ITetromino
+                self.type = "I"
             case "J":
                 self.__class__ = JTetromino
+                self.type = "J"
             case "L":
                 self.__class__ = LTetromino
+                self.type = "L"
             case "O":
                 self.__class__ = OTetromino
+                self.type = "O"
             case "S":
                 self.__class__ = STetromino
+                self.type = "S"
             case "T":
                 self.__class__ = TTetromino
+                self.type = "T"
             case "Z":
                 self.__class__ = ZTetromino
+                self.type = "Z"
             case _:
                 raise ValueError(f"Invalid tetromino type: {type}")
 
@@ -41,6 +48,7 @@ class Tetromino:
 
 
 class ITetromino(Tetromino):
+    tetromino_idx = 1
     positions = [
         np.array([[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]]),
         np.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
@@ -50,6 +58,7 @@ class ITetromino(Tetromino):
 
 
 class JTetromino(Tetromino):
+    tetromino_idx = 2
     positions = [
         np.array(
             [
@@ -83,6 +92,7 @@ class JTetromino(Tetromino):
 
 
 class LTetromino(Tetromino):
+    tetromino_idx = 3
     positions = [
         np.array(
             [
@@ -116,6 +126,7 @@ class LTetromino(Tetromino):
 
 
 class OTetromino(Tetromino):
+    tetromino_idx = 4
     positions = [
         np.array(
             [
@@ -149,6 +160,7 @@ class OTetromino(Tetromino):
 
 
 class STetromino(Tetromino):
+    tetromino_idx = 5
     positions = [
         np.array(
             [
@@ -182,6 +194,7 @@ class STetromino(Tetromino):
 
 
 class TTetromino(Tetromino):
+    tetromino_idx = 6
     positions = [
         np.array(
             [
@@ -215,6 +228,7 @@ class TTetromino(Tetromino):
 
 
 class ZTetromino(Tetromino):
+    tetromino_idx = 7
     positions = [
         np.array(
             [
