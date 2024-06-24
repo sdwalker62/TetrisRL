@@ -86,7 +86,6 @@ async def add_frame(frame_data: Request):
     arr = np.where(arr == "5.0", "S", arr)
     arr = np.where(arr == "6.0", "T", arr)
     arr = np.where(arr == "7.0", "Z", arr)
-    print(arr.shape)
     render_frames.append(arr.tolist())
 
 

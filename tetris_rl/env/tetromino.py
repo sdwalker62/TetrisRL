@@ -64,28 +64,32 @@ class JTetromino(Tetromino):
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
     positions = [
-        np.array(
+        2
+        * np.array(
             [
                 [1, 0, 0],
                 [1, 1, 1],
                 [0, 0, 0],
             ]
         ),
-        np.array(
+        2
+        * np.array(
             [
                 [0, 1, 1],
                 [0, 1, 0],
                 [0, 1, 0],
             ]
         ),
-        np.array(
+        2
+        * np.array(
             [
                 [0, 0, 0],
                 [1, 1, 1],
                 [0, 0, 1],
             ]
         ),
-        np.array(
+        2
+        * np.array(
             [
                 [0, 1, 0],
                 [0, 1, 0],
@@ -100,28 +104,32 @@ class LTetromino(Tetromino):
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
     positions = [
-        np.array(
+        3
+        * np.array(
             [
                 [0, 0, 1],
                 [1, 1, 1],
                 [0, 0, 0],
             ]
         ),
-        np.array(
+        3
+        * np.array(
             [
                 [0, 1, 0],
                 [0, 1, 0],
                 [0, 1, 1],
             ]
         ),
-        np.array(
+        3
+        * np.array(
             [
                 [0, 0, 0],
                 [1, 1, 1],
                 [1, 0, 0],
             ]
         ),
-        np.array(
+        3
+        * np.array(
             [
                 [1, 1, 0],
                 [0, 1, 0],
@@ -136,28 +144,32 @@ class OTetromino(Tetromino):
     left_action_oob = [1, 1, 1, 1]
     right_action_oob = [2, 2, 2, 2]
     positions = [
-        np.array(
+        4
+        * np.array(
             [
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
             ]
         ),
-        np.array(
+        4
+        * np.array(
             [
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
             ]
         ),
-        np.array(
+        4
+        * np.array(
             [
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
             ]
         ),
-        np.array(
+        4
+        * np.array(
             [
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
@@ -172,28 +184,32 @@ class STetromino(Tetromino):
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
     positions = [
-        np.array(
+        5
+        * np.array(
             [
                 [0, 1, 1],
                 [1, 1, 0],
                 [0, 0, 0],
             ]
         ),
-        np.array(
+        5
+        * np.array(
             [
                 [0, 1, 0],
                 [0, 1, 1],
                 [0, 0, 1],
             ]
         ),
-        np.array(
+        5
+        * np.array(
             [
                 [0, 0, 0],
                 [0, 1, 1],
                 [1, 1, 0],
             ]
         ),
-        np.array(
+        5
+        * np.array(
             [
                 [1, 0, 0],
                 [1, 1, 0],
@@ -208,28 +224,32 @@ class TTetromino(Tetromino):
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
     positions = [
-        np.array(
+        6
+        * np.array(
             [
                 [0, 1, 0],
                 [1, 1, 1],
                 [0, 0, 0],
             ]
         ),
-        np.array(
+        6
+        * np.array(
             [
                 [0, 1, 0],
                 [0, 1, 1],
                 [0, 1, 0],
             ]
         ),
-        np.array(
+        6
+        * np.array(
             [
                 [0, 0, 0],
                 [1, 1, 1],
                 [0, 1, 0],
             ]
         ),
-        np.array(
+        6
+        * np.array(
             [
                 [0, 1, 0],
                 [1, 1, 0],
@@ -244,28 +264,32 @@ class ZTetromino(Tetromino):
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
     positions = [
-        np.array(
+        7
+        * np.array(
             [
                 [1, 1, 0],
                 [0, 1, 1],
                 [0, 0, 0],
             ]
         ),
-        np.array(
+        7
+        * np.array(
             [
                 [0, 0, 1],
                 [0, 1, 1],
                 [0, 1, 0],
             ]
         ),
-        np.array(
+        7
+        * np.array(
             [
                 [0, 0, 0],
                 [1, 1, 0],
                 [0, 1, 1],
             ]
         ),
-        np.array(
+        7
+        * np.array(
             [
                 [0, 1, 0],
                 [1, 1, 0],

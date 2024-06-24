@@ -17,7 +17,7 @@ from gymnasium import Env, spaces
 
 from tetris_rl.env.tetromino import Tetromino
 
-FPS = 60
+FPS = 5
 
 
 class TetrisEnv(Env):
@@ -95,13 +95,19 @@ class TetrisEnv(Env):
         #       If landed, update statistics
         #   Spawn new piece
 
+        self._move(2)
+
         if self.render_mode == "web_viewer":
             self.render()
 
         return self.playfield, 0, False, False, {}
 
     def _move(self, action):
-        pass
+        if action == 2:
+            self.cur_tetromino_pos = (
+                self.cur_tetromino_pos[0] + 1,
+                self.cur_tetromino_pos[1],
+            )
 
     def _check_if_oob(self, move_left: bool):
         r"""Check if the current tetromino in play is out of bounds."""
@@ -198,13 +204,7 @@ class TetrisEnv(Env):
             + representation.shape[0],
             self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
             + representation.shape[1],
-        ] += self.cur_tetromino._get_representation() * self.cur_tetromino.tetromino_idx
-        self.playfield[
-            self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
-            + representation.shape[0],
-            self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
-            + representation.shape[1],
-        ] += self.cur_tetromino._get_representation() * self.cur_tetromino.tetromino_idx
+        ] += representation
 
     def _create_new_ghost_playfield(self):
         return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
@@ -239,7 +239,16 @@ class TetrisEnv(Env):
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend"""
-        data = json.dumps({"board": self.playfield.tolist()})
+        representation = self.cur_tetromino._get_representation()
+        arr = self.playfield.copy()
+        arr[
+            self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
+            + representation.shape[0],
+            self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
+            + representation.shape[1],
+        ] += representation
+        arr = arr[20:]
+        data = json.dumps({"board": arr.tolist()})
         headers = {"Content-Type": "application/json"}
         time.sleep(1 / FPS)
         requests.post("http://localhost:8000/tetris/frame", data=data, headers=headers)

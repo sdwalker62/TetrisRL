@@ -22,7 +22,7 @@
 	let lines: number = 0;
 	let game_mode: string;
 
-	const FPS = 30;
+	const FPS = 5;
 	const INTERVAL = 1000 / FPS;
 	// const INTERVAL = 500;
 
