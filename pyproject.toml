@@ -12,6 +12,7 @@ rich = "^13.7.1"
 gymnasium = "^0.29.1"
 textual = "^0.70.0"
 fastapi = "^0.111.0"
+click = "^8.1.7"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.9"

@@ -1,5 +1,8 @@
 import random
+import tomllib
+from pathlib import Path
 
+import click
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
@@ -59,3 +62,20 @@ def get_statistics():
 def get_game_mode():
     game_mode = random.choice(["ai", "human"])
     return JSONResponse(content={"game_mode": game_mode})
+
+
+@click.command()
+@click.option("--mode", default="bot", help="Mode of the game")
+@click.option("--cfg", help="Configuration file path for algorithm")
+def main(mode: str, cfg: str):
+    if mode == "bot":
+        assert cfg is not None, "Please provide a configuration file for the bot"
+        assert Path(cfg).exists(), f"Cannot find config file at {cfg}"
+        with open(cfg, "rb") as f:
+            config = tomllib.load(f)
+        print(config)
+
+
+if __name__ == "__main__":
+    main()
+    # uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
