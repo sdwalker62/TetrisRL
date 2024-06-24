@@ -364,4 +364,27 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+node_modules
+
+# Output
+.output
+.vercel
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,jetbrains,windows,macos

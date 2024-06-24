@@ -1,4 +1,6 @@
 {
   "spellright.language": ["en"],
-  "spellright.documentTypes": ["markdown", "latex", "plaintext", "python"]
+  "spellright.documentTypes": ["markdown", "latex", "plaintext", "python"],
+  "css.customData": [".vscode/tailwind.json"],
+  "pcss.lint.unknownAtRules": "ignore"
 }
