@@ -1,14 +1,15 @@
 import random
-import tomllib
 from pathlib import Path
 
 import click
+import gymnasium
+import tomllib
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .episode import Episode
+# from .episode import Episode
 
 app = FastAPI()
 
@@ -89,5 +90,7 @@ def main(mode: str, cfg: str, n_episodes: int, eval: bool, visualize: bool):
 
 
 if __name__ == "__main__":
-    main()
+    env = gymnasium.make("env:Tetris-v0")
+    print(env)
+    # main()
     # uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
