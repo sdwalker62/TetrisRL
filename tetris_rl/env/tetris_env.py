@@ -69,7 +69,7 @@ class TetrisEnv(Env):
         zeroes except where the proposed tetromino will be placed. This will be used to test for collisions
         by creating a mask and if any values are non-zero it will indicate a collision.
         """
-        self.collision_ghost = np.zeroes(
+        self.ghost_playfield = np.zeroes(
             (self.playfield_width, self.visual_height + self.buffer_height)
         )
 
@@ -81,12 +81,53 @@ class TetrisEnv(Env):
         r"""Check if the current tetromino in play is out of bounds."""
         pass
 
-    def _check_if_collision(self):
+    def _check_if_collision(self) -> bool:
         r"""Checks if the current tetromino in play has collided with any static tetrominos.
 
         This will also be used for wall kicks.
+
+        The idea is simple, say we have two small boards where the 1 represents a block and 0 represents an empty space.
+
+        board1 = [
+            [1, 0, 0],
+            [1, 0, 0],
+            [1, 0, 0]
+        ]
+
+        board2 = [
+            [1, 1, 1],
+            [0, 0, 0],
+            [0, 0, 0]
+        ]
+
+        Then,
+
+        board1 > 0 = [
+            [True, False, False],
+            [True, False, False],
+            [True, False, False]
+        ]
+
+        board2 > 0 = [
+            [True, True, True],
+            [False, False, False],
+            [False, False, False]
+        ]
+
+        Element-wise logical AND results in an array where the True values are the overlapping blocks.
+
+        np.logical_and(board1 > 0, board2 > 0) = [
+            [True, False, False],
+            [False, False, False],
+            [False, False, False]
+        ]
+
+        We then return the result of np.any() to check if there are any overlapping blocks in the array:
+
+        np.any(np.logical_and(board1 > 0, board2 > 0)) = True
+
         """
-        pass
+        return np.any(np.logical_and(self.ghost_playfield > 0, self.playfield > 0))
 
     def _spawn_tetromino(self) -> None:
         r"""Spawn a new tetromino at the top of the playfield.
@@ -105,15 +146,15 @@ class TetrisEnv(Env):
                 self.cur_tetromino_pos = (3, 20)
 
         self.cur_tetromino = next_tetromino
-        self.collision_ghost = self._create_new_ghost()
-        self.collision_ghost[
+        self.ghost_playfield = self._create_new_ghost()
+        self.ghost_playfield[
             self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
             + self.cur_tetromino.shape[0],
             self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
             + self.cur_tetromino.shape[1],
         ] += self.cur_tetromino.get_representation()
 
-    def _create_new_ghost(self):
+    def _create_new_ghost_playfield(self):
         return np.zeros((self.playfield_width, self.visual_height + self.buffer_height))
 
     def _update_ghost(self, shift: tuple):
