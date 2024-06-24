@@ -75,10 +75,24 @@ class TetrisEnv(Env):
 
     def step(self, action):
         r"""Take a single step in the environment."""
+
+        # Check if OOB
+        # Check for collisions
+        # If rotating, check for wall kicks
+        # Check for landing
+        #   Check for game over
+        #   If landed, check for line clears
+        #       If landed, update statistics
+        #   Spawn new piece
+
         pass
 
     def _check_if_oob(self):
         r"""Check if the current tetromino in play is out of bounds."""
+        pass
+
+    def _check_if_landed(self):
+        r"""Check if the current tetromino in play has landed on the playfield."""
         pass
 
     def _check_if_collision(self) -> bool:

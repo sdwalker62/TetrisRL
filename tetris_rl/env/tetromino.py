@@ -49,6 +49,8 @@ class Tetromino:
 
 class ITetromino(Tetromino):
     tetromino_idx = 1
+    left_action_oob = [0, 2, 0, 1]
+    right_action_oob = [3, 2, 3, 1]
     positions = [
         np.array([[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]]),
         np.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
@@ -59,6 +61,8 @@ class ITetromino(Tetromino):
 
 class JTetromino(Tetromino):
     tetromino_idx = 2
+    left_action_oob = [0, 1, 0, 0]
+    right_action_oob = [2, 2, 2, 1]
     positions = [
         np.array(
             [
@@ -93,6 +97,8 @@ class JTetromino(Tetromino):
 
 class LTetromino(Tetromino):
     tetromino_idx = 3
+    left_action_oob = [0, 1, 0, 0]
+    right_action_oob = [2, 2, 2, 1]
     positions = [
         np.array(
             [
@@ -127,6 +133,8 @@ class LTetromino(Tetromino):
 
 class OTetromino(Tetromino):
     tetromino_idx = 4
+    left_action_oob = [1, 1, 1, 1]
+    right_action_oob = [2, 2, 2, 2]
     positions = [
         np.array(
             [
@@ -161,6 +169,8 @@ class OTetromino(Tetromino):
 
 class STetromino(Tetromino):
     tetromino_idx = 5
+    left_action_oob = [0, 1, 0, 0]
+    right_action_oob = [2, 2, 2, 1]
     positions = [
         np.array(
             [
@@ -195,6 +205,8 @@ class STetromino(Tetromino):
 
 class TTetromino(Tetromino):
     tetromino_idx = 6
+    left_action_oob = [0, 1, 0, 0]
+    right_action_oob = [2, 2, 2, 1]
     positions = [
         np.array(
             [
@@ -229,6 +241,8 @@ class TTetromino(Tetromino):
 
 class ZTetromino(Tetromino):
     tetromino_idx = 7
+    left_action_oob = [0, 1, 0, 0]
+    right_action_oob = [2, 2, 2, 1]
     positions = [
         np.array(
             [
