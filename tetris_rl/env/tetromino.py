@@ -5,15 +5,31 @@ class Tetromino:
     positions = []
     current_position = 0
 
-    def __init__(self):
-        pass
+    def __init__(self, type: str):
+        match type:
+            case "I":
+                self.__class__ = ITetromino
+            case "J":
+                self.__class__ = JTetromino
+            case "L":
+                self.__class__ = LTetromino
+            case "O":
+                self.__class__ = OTetromino
+            case "S":
+                self.__class__ = STetromino
+            case "T":
+                self.__class__ = TTetromino
+            case "Z":
+                self.__class__ = ZTetromino
+            case _:
+                raise ValueError(f"Invalid tetromino type: {type}")
 
     def rotate_clockwise(self) -> np.ndarray:
-        self.current_position += 1
+        self.current_position = (self.current_position + 1) % len(self.positions)
         return self._get_representation()
 
     def rotate_counter_clockwise(self) -> np.ndarray:
-        self.current_position -= 1
+        self.current_position = (self.current_position - 1) % len(self.positions)
         return self._get_representation()
 
     def _get_representation(self) -> np.ndarray:
