@@ -8,6 +8,8 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .episode import Episode
+
 app = FastAPI()
 
 origins = ["http://localhost", "http://localhost:8000"]
@@ -67,13 +69,23 @@ def get_game_mode():
 @click.command()
 @click.option("--mode", default="bot", help="Mode of the game")
 @click.option("--cfg", help="Configuration file path for algorithm")
-def main(mode: str, cfg: str):
+@click.option(
+    "--n_episodes", default=1, help="Number of episodes to train/evaluate over"
+)
+@click.option("--eval", is_flag=True, help="Evaluate the model (else train)")
+@click.option("--visualize", is_flag=True, help="Visualize the game with the frontend")
+def main(mode: str, cfg: str, n_episodes: int, eval: bool, visualize: bool):
+    if visualize:
+        # TODO: Implement 60hz tick logic
+        pass
+
     if mode == "bot":
         assert cfg is not None, "Please provide a configuration file for the bot"
         assert Path(cfg).exists(), f"Cannot find config file at {cfg}"
         with open(cfg, "rb") as f:
             config = tomllib.load(f)
-        print(config)
+
+        episode = Episode(mode="bot")
 
 
 if __name__ == "__main__":
