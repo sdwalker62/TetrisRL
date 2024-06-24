@@ -22,9 +22,9 @@
 	let lines: number = 0;
 	let game_mode: string;
 
-	const FPS = 60;
-	// const INTERVAL = 1000 / FPS;
-	const INTERVAL = 1500;
+	const FPS = 30;
+	const INTERVAL = 1000 / FPS;
+	// const INTERVAL = 500;
 
 	onMount(() => {
 		const interval = setInterval(async () => {

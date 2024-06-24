@@ -7,12 +7,17 @@ All rules used in the environment are based on the Tetris guidelines posted at:
 https://tetris.wiki/Tetris_Guideline
 """
 
+import json
 import random
+import time
 
 import numpy as np
+import requests
 from gymnasium import Env, spaces
 
 from tetris_rl.env.tetromino import Tetromino
+
+FPS = 60
 
 
 class TetrisEnv(Env):
@@ -69,12 +74,17 @@ class TetrisEnv(Env):
         zeroes except where the proposed tetromino will be placed. This will be used to test for collisions
         by creating a mask and if any values are non-zero it will indicate a collision.
         """
-        self.ghost_playfield = np.zeroes(
-            (self.playfield_width, self.visual_height + self.buffer_height)
+        self.ghost_playfield = np.zeros(
+            (self.visual_height + self.buffer_height, self.playfield_width)
         )
 
     def step(self, action):
         r"""Take a single step in the environment."""
+
+        # next_pos = self._move(action)
+
+        # if self._check_if_oob(next_pos):
+        #     next_pos = self.cur_tetromino_pos
 
         # Check if OOB
         # Check for collisions
@@ -85,11 +95,32 @@ class TetrisEnv(Env):
         #       If landed, update statistics
         #   Spawn new piece
 
+        if self.render_mode == "web_viewer":
+            self.render()
+
+        return self.playfield, 0, False, False, {}
+
+    def _move(self, action):
         pass
 
-    def _check_if_oob(self):
+    def _check_if_oob(self, move_left: bool):
         r"""Check if the current tetromino in play is out of bounds."""
-        pass
+        if move_left:
+            left_edge = (
+                self.cur_tetromino_pos[0]
+                + self.cur_tetromino.left_action_oob[
+                    self.cur_tetromino.current_position
+                ]
+            )
+            return left_edge < 0
+        else:
+            right_edge = (
+                self.cur_tetromino_pos[0]
+                + self.cur_tetromino.right_action_oob[
+                    self.cur_tetromino.current_position
+                ]
+            )
+            return right_edge >= self.playfield_width
 
     def _check_if_landed(self):
         r"""Check if the current tetromino in play has landed on the playfield."""
@@ -155,21 +186,28 @@ class TetrisEnv(Env):
 
         match tetromino_type:
             case "I" | "O":
-                self.cur_tetromino_pos = (3, 21)
+                self.cur_tetromino_pos = (21, 3)
             case "T" | "S" | "Z" | "J" | "L":
-                self.cur_tetromino_pos = (3, 20)
+                self.cur_tetromino_pos = (20, 3)
 
         self.cur_tetromino = next_tetromino
-        self.ghost_playfield = self._create_new_ghost()
+        representation = self.cur_tetromino._get_representation()
+        self.ghost_playfield = self._create_new_ghost_playfield()
         self.ghost_playfield[
             self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
-            + self.cur_tetromino.shape[0],
+            + representation.shape[0],
             self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
-            + self.cur_tetromino.shape[1],
-        ] += self.cur_tetromino.get_representation()
+            + representation.shape[1],
+        ] += self.cur_tetromino._get_representation() * self.cur_tetromino.tetromino_idx
+        self.playfield[
+            self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
+            + representation.shape[0],
+            self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
+            + representation.shape[1],
+        ] += self.cur_tetromino._get_representation() * self.cur_tetromino.tetromino_idx
 
     def _create_new_ghost_playfield(self):
-        return np.zeros((self.playfield_width, self.visual_height + self.buffer_height))
+        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _update_ghost(self, shift: tuple):
         r"""Update the ghost piece to reflect the current position of the active piece."""
@@ -187,7 +225,7 @@ class TetrisEnv(Env):
 
     def _init_playfield(self) -> np.ndarray:
         r"""Creates a default playfield with no tetrominos."""
-        return np.zeros((self.playfield_width, self.visual_height + self.buffer_height))
+        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _refill_bag(self) -> list:
         r"""Populates the bag with a random ordering of the seven tetrominos. All seven tetrominos are included in the bag."""
@@ -196,11 +234,15 @@ class TetrisEnv(Env):
 
     def reset(self, seed=None, options=None, **kwargs):
         r"""Resets the environment to its initial state."""
-        pass
+        self._spawn_tetromino()
+        return self.playfield, {}
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend"""
-        pass
+        data = json.dumps({"board": self.playfield.tolist()})
+        headers = {"Content-Type": "application/json"}
+        time.sleep(1 / FPS)
+        requests.post("http://localhost:8000/tetris/frame", data=data, headers=headers)
 
     def close(self):
         r"""Closing logic for the environment."""
