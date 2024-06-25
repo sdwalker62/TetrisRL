@@ -115,6 +115,17 @@ async def get_action():
     return JSONResponse(content={"action": action[0]})
 
 
+class ClearActionEvent(BaseModel):
+    should_clear: bool
+
+
+@app.post("/tetris/clear_action_buffer")
+async def clear_action_buffer(data: ClearActionEvent):
+    if data.should_clear:
+        action_buffer.clear()
+    return JSONResponse(content={"status": "success"})
+
+
 # @click.command()
 # @click.option("--mode", default="bot", help="Mode of the game")
 # @click.option("--cfg", help="Configuration file path for algorithm")

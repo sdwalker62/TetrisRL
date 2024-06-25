@@ -21,7 +21,7 @@ from tetris_rl.env.tetromino import Tetromino
 class TetrisEnv(Env):
     r"""Implements the Tetris environment for OpenAI Gym."""
 
-    metadata = {"render_modes": ["web_viewer"], "render_fps": 1}
+    metadata = {"render_modes": ["web_viewer"], "render_fps": 7}
     playfield_width = 10  # Number of columns in the playfield
     visual_height = 20  # Number of rows visible to the player
     buffer_height = 20  # Number of rows offscreen for spawning and rotating tetrminos
@@ -94,27 +94,34 @@ class TetrisEnv(Env):
         #       If landed, update statistics
         #   Spawn new piece
 
-        self._move(action)
+        proposed_pos = self._move(action)
+        should_render = True
+        if not self._check_if_oob(proposed_pos, action == 0):
+            print("Not out of bounds")
+            self.cur_tetromino_pos = proposed_pos
+        else:
+            should_render = False
+            print("Out of bounds")
 
-        if self.render_mode == "web_viewer":
+        if should_render and self.render_mode == "web_viewer":
             self.render()
 
         return self.playfield, 0, False, False, {}
 
-    def _move(self, action):
+    def _move(self, action) -> tuple[int, int]:
         match action:
             case 0:  # left
-                self.cur_tetromino_pos = (
+                return (
                     self.cur_tetromino_pos[0],
                     self.cur_tetromino_pos[1] - 1,
                 )
             case 1:  # right
-                self.cur_tetromino_pos = (
+                return (
                     self.cur_tetromino_pos[0],
                     self.cur_tetromino_pos[1] + 1,
                 )
             case 2:  # soft-drop
-                self.cur_tetromino_pos = (
+                return (
                     self.cur_tetromino_pos[0] + 1,
                     self.cur_tetromino_pos[1],
                 )
@@ -125,28 +132,30 @@ class TetrisEnv(Env):
             case 5:  # counter-clockwise rotation
                 pass
             case _:
-                self.cur_tetromino_pos = (
+                return (
                     self.cur_tetromino_pos[0] + 1,
                     self.cur_tetromino_pos[1],
                 )
 
-    def _check_if_oob(self, move_left: bool):
+    def _check_if_oob(self, proposed_pos: tuple, move_left: bool):
         r"""Check if the current tetromino in play is out of bounds."""
         if move_left:
             left_edge = (
-                self.cur_tetromino_pos[0]
+                proposed_pos[1]
                 + self.cur_tetromino.left_action_oob[
                     self.cur_tetromino.current_position
                 ]
             )
+            print(f"Collided w/ left edge: {left_edge < 0}")
             return left_edge < 0
         else:
             right_edge = (
-                self.cur_tetromino_pos[0]
+                proposed_pos[1]
                 + self.cur_tetromino.right_action_oob[
                     self.cur_tetromino.current_position
                 ]
             )
+            print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
             return right_edge >= self.playfield_width
 
     def _check_if_landed(self):
@@ -256,6 +265,14 @@ class TetrisEnv(Env):
     def reset(self, seed=None, options=None, **kwargs):
         r"""Resets the environment to its initial state."""
         self._spawn_tetromino()
+        if self.manual_play:
+            data = json.dumps({"should_clear": True})
+            headers = {"Content-Type": "application/json"}
+            requests.post(
+                "http://localhost:8000/tetris/clear_action_buffer",
+                data=data,
+                headers=headers,
+            )
         return self.playfield, {}
 
     def render(self) -> np.ndarray:
@@ -276,4 +293,4 @@ class TetrisEnv(Env):
 
     def close(self):
         r"""Closing logic for the environment."""
-        pass
+        print("Closing Tetris environment")

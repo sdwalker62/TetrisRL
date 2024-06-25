@@ -70,8 +70,6 @@
 	onMount(() => {
 		document.addEventListener('keydown', handleKeyPress);
 		const interval = setInterval(async () => {
-			// const board_response = await fetch('http://localhost:8000/tetris/board');
-			// const board_data = await board_response.json();
 			fetchBoardState();
 
 			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');

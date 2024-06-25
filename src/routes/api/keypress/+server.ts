@@ -10,8 +10,6 @@ export async function POST({ request }) {
 				'Content-Type': 'application/json'
 			}
 		});
-
-		console.log('Success:', response.data);
 		return json(response.data);
 	} catch (error) {
 		console.error('Error:', error);
