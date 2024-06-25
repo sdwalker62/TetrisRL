@@ -1,15 +1,14 @@
+import datetime
 import random
-from pathlib import Path
 
-import click
 import numpy as np
+import requests
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-# from .episode import Episode
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -28,6 +27,7 @@ N_COLS = 10
 N_ROWS = 20
 
 render_frames = []
+action_buffer = []
 
 
 def generate_random_board() -> list[list[str]]:
@@ -42,8 +42,6 @@ def generate_random_next_tetromino() -> str:
 
 @app.get("/tetris/board")
 def get_board():
-    # random_board = generate_random_board()
-    # json_data = jsonable_encoder(random_board)
     if len(render_frames) == 0:
         return [["E" for _ in range(N_COLS)] for _ in range(N_ROWS)]
     frame = render_frames.pop(0)
@@ -87,6 +85,34 @@ async def add_frame(frame_data: Request):
     arr = np.where(arr == "6.0", "T", arr)
     arr = np.where(arr == "7.0", "Z", arr)
     render_frames.append(arr.tolist())
+    headers = {"Content-Type": "application/json"}
+    requests.post(
+        "http://localhost:5173/api/render",
+        json={"board_state": arr.tolist()},
+        headers=headers,
+    )
+
+
+class KeypressEvent(BaseModel):
+    key: str
+    timestamp: datetime.datetime
+
+
+@app.post("/tetris/keypress")
+async def receive_keypress(keypress_event: KeypressEvent):
+    key = keypress_event.key
+    timestamp = keypress_event.timestamp
+    action_buffer.append((key, timestamp))
+    print(f"Registered action: {key} at {timestamp}")
+    return JSONResponse(content={"status": "success"})
+
+
+@app.get("/tetris/action")
+async def get_action():
+    if len(action_buffer) == 0:
+        return JSONResponse(content={"action": "none"})
+    action = action_buffer.pop(0)
+    return JSONResponse(content={"action": action[0]})
 
 
 # @click.command()

@@ -14,6 +14,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PersonalHighScore from '$lib/components/PersonalHighScore.svelte';
 	import GlobalHighScore from '$lib/components/GlobalHighScore.svelte';
+	import { boardState } from '$lib/stores';
 
 	let board_state: string[][];
 	let next_tetromino_state: string[][];
@@ -22,15 +23,56 @@
 	let lines: number = 0;
 	let game_mode: string;
 
-	const FPS = 5;
+	const FPS = 60;
 	const INTERVAL = 1000 / FPS;
 	// const INTERVAL = 500;
 
+	async function fetchBoardState() {
+		try {
+			const response = await fetch('/api/render', {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			const data = await response.json();
+			boardState.set(data.boardState);
+		} catch (error) {
+			console.error('Error fetching board state:', error);
+		}
+	}
+
+	async function handleKeyPress(event: KeyboardEvent) {
+		const data = {
+			key: event.key,
+			timestamp: new Date().toISOString()
+		};
+
+		try {
+			const response = await fetch('/api/keypress', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(data)
+			});
+
+			if (!response.ok) {
+				throw new Error('Collector middleware failed to log keypress event.');
+			}
+
+			const result = await response.json();
+		} catch (error) {
+			console.error('Error:', error);
+		}
+	}
+
 	onMount(() => {
+		document.addEventListener('keydown', handleKeyPress);
 		const interval = setInterval(async () => {
-			const board_response = await fetch('http://localhost:8000/tetris/board');
-			const board_data = await board_response.json();
-			board_state = board_data.board_state;
+			// const board_response = await fetch('http://localhost:8000/tetris/board');
+			// const board_data = await board_response.json();
+			fetchBoardState();
 
 			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');
 			const next_tetromino_data = await next_tetromino_response.json();
@@ -46,7 +88,10 @@
 			const game_mode_data = await game_mode_response.json();
 			game_mode = game_mode_data.game_mode;
 		}, INTERVAL);
-		return () => clearInterval(interval);
+		return () => {
+			document.removeEventListener('keydown', handleKeyPress);
+			clearInterval(interval);
+		};
 	});
 </script>
 
@@ -88,8 +133,10 @@
 			</Tabs.List>
 			<Tabs.Content value="game">
 				<div class="flex w-full flex-col place-items-center p-4">
-					{#key board_state}
-						<Board board={board_state} />
+					{#key $boardState}
+						{#if $boardState}
+							<Board board={$boardState} />
+						{/if}
 					{/key}
 				</div>
 			</Tabs.Content>
