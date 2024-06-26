@@ -15,6 +15,7 @@
 	import PersonalHighScore from '$lib/components/PersonalHighScore.svelte';
 	import GlobalHighScore from '$lib/components/GlobalHighScore.svelte';
 	import { boardState } from '$lib/stores';
+	import _ from 'lodash';
 
 	let board_state: string[][];
 	let next_tetromino_state: string[][];
@@ -23,6 +24,7 @@
 	let lines: number = 0;
 	let game_mode: string;
 
+	const aborter = new AbortController();
 	const FPS = 60;
 	const INTERVAL = 1000 / FPS;
 	// const INTERVAL = 500;
@@ -39,6 +41,38 @@
 			boardState.set(data.boardState);
 		} catch (error) {
 			console.error('Error fetching board state:', error);
+		}
+	}
+
+	async function fetchBoardStateStream(url: string, { signal }: { signal: AbortSignal }) {
+		let prev_state = null;
+		while (!signal.aborted) {
+			try {
+				const response = await fetch(url, signal);
+				for await (const chunk of response.body) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains board data, skip otherwise
+					if (Object.keys(decoded_chunk).includes('boardState')) {
+						// Initialize prev_state with first chunk so we can compare
+						if (!prev_state) {
+							prev_state = decoded_chunk;
+						}
+						if (!_.isEqual(decoded_chunk.boardState, prev_state.boardState)) {
+							console.log('Response', decoded_chunk);
+							boardState.set(decoded_chunk.boardState);
+							prev_state = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
 		}
 	}
 
@@ -69,9 +103,9 @@
 
 	onMount(() => {
 		document.addEventListener('keydown', handleKeyPress);
+		fetchBoardStateStream('/api/render/', { signal: aborter.signal });
 		const interval = setInterval(async () => {
-			fetchBoardState();
-
+			// fetchBoardState();
 			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');
 			const next_tetromino_data = await next_tetromino_response.json();
 			next_tetromino_state = next_tetromino_data.next_tetromino;
