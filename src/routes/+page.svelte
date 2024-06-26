@@ -14,7 +14,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PersonalHighScore from '$lib/components/PersonalHighScore.svelte';
 	import GlobalHighScore from '$lib/components/GlobalHighScore.svelte';
-	import { boardState, linesCleared, score, level } from '$lib/stores';
+	import { boardState, linesCleared, score, level, nextTetromino, mode } from '$lib/stores';
 	import _ from 'lodash';
 
 	let next_tetromino_state: string[][];
@@ -125,6 +125,40 @@
 		}
 	}
 
+	async function streamMode(url: string, { signal }: { signal: AbortController }) {
+		let prevMode = null;
+		while (!signal.abort) {
+			try {
+				const response = await fetch(url, signal);
+				// @ts-ignore
+				for await (const chunk of response.body!) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains mode data, skip otherwise
+					if (Object.keys(decoded_chunk).includes('mode')) {
+						// Initialize prevMode with first chunk so we can compare
+						if (!prevMode) {
+							prevMode = decoded_chunk;
+							mode.set(decoded_chunk.mode);
+						}
+						if (decoded_chunk.mode !== prevMode.mode) {
+							console.log('Mode', decoded_chunk);
+							mode.set(decoded_chunk.mode);
+							prevMode = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
+		}
+	}
+
 	async function fetchBoardStateStream(url: string, { signal }: { signal: AbortController }) {
 		let prev_state = null;
 		while (!signal.abort) {
@@ -144,6 +178,39 @@
 							console.log('Response', decoded_chunk);
 							boardState.set(decoded_chunk.boardState);
 							prev_state = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
+		}
+	}
+
+	async function streamNextTetromino(url: string, { signal }: { signal: AbortController }) {
+		let prevTetromino = null;
+		while (!signal.abort) {
+			try {
+				const response = await fetch(url, signal);
+				// @ts-ignore
+				for await (const chunk of response.body!) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains tetromino representation, skip otherwise
+					if (Object.keys(decoded_chunk).includes('representation')) {
+						// Initialize prevTetromino with first chunk so we can compare
+						if (!prevTetromino) {
+							prevTetromino = decoded_chunk;
+						}
+						if (!_.isEqual(decoded_chunk.representation, prevTetromino.representation)) {
+							console.log('Response', decoded_chunk);
+							nextTetromino.set(decoded_chunk.representation);
+							prevTetromino = decoded_chunk;
 						}
 					}
 				}
@@ -189,6 +256,8 @@
 		streamLinesCleared('/api/statistics/lines_cleared/', { signal: aborter.signal });
 		streamScore('/api/statistics/score/', { signal: aborter.signal });
 		fetchBoardStateStream('/api/render/', { signal: aborter.signal });
+		streamNextTetromino('/api/next_tetromino/', { signal: aborter.signal });
+		streamMode('/api/mode/', { signal: aborter.signal });
 		const interval = setInterval(async () => {
 			// fetchBoardState();
 			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');
@@ -230,10 +299,12 @@
 		{#key $score}
 			<Score score={$score} level={$level} lines={$linesCleared} />
 		{/key}
-		{#key next_tetromino_state}
-			<NextTetrominoDisplay board={next_tetromino_state} />
+		{#key nextTetromino}
+			<NextTetrominoDisplay board={nextTetromino} />
 		{/key}
-		<GameMode gameMode={game_mode} />
+		{#key mode}
+			<GameMode gameMode={$mode} />
+		{/key}
 	</div>
 	<Separator class=" h-screen" orientation={'vertical'} />
 	<div id="tabs" class="flex w-full flex-col items-center justify-items-center p-1">
