@@ -265,14 +265,18 @@ class TetrisEnv(Env):
     def reset(self, seed=None, options=None, **kwargs):
         r"""Resets the environment to its initial state."""
         self._spawn_tetromino()
+        requests.post(
+            "http://localhost:8000/tetris/mode",
+            data=json.dumps({"mode": "human" if self.manual_play else "bot"}),
+            headers={"Content-Type": "application/json"},
+        )
         if self.manual_play:
-            data = json.dumps({"should_clear": True})
-            headers = {"Content-Type": "application/json"}
             requests.post(
                 "http://localhost:8000/tetris/clear_action_buffer",
-                data=data,
-                headers=headers,
+                data=json.dumps({"should_clear": True}),
+                headers={"Content-Type": "application/json"},
             )
+
         return self.playfield, {}
 
     def render(self) -> np.ndarray:

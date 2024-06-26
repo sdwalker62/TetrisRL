@@ -30,9 +30,11 @@ def manual_action_parser(key: str) -> int:
 
 
 if __name__ == "__main__":
-    env = gymnasium.make("env:Tetris-v0", render_mode="web_viewer")
-    env.reset()
     mode = "human"
+    env = gymnasium.make(
+        "env:Tetris-v0", render_mode="web_viewer", manual_play=mode == "human"
+    )
+    env.reset()
     continue_game = True
     while continue_game:
         if mode == "human":
@@ -41,5 +43,7 @@ if __name__ == "__main__":
             action = manual_action_parser(key)
             playfield = env.step(action)
         elif mode == "random":
+            env = gymnasium.make("env:Tetris-v0", render_mode="web_viewer", mode=mode)
+            env.reset()
             action = env.action_space.sample()
             playfield = env.step(action)

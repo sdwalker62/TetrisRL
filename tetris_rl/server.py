@@ -93,6 +93,17 @@ async def add_frame(frame_data: Request):
     )
 
 
+@app.post("/tetris/mode")
+async def add_mode(mode: Request):
+    data = await mode.json()
+    print(data["mode"])
+    requests.post(
+        "http://localhost:5173/api/mode",
+        json={"mode": data["mode"]},
+        headers={"Content-Type": "application/json"},
+    )
+
+
 @app.post("/tetris/stats")
 async def add_statistics(stats: Request):
     data = await stats.json()

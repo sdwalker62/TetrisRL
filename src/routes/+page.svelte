@@ -17,9 +17,6 @@
 	import { boardState, linesCleared, score, level, nextTetromino, mode } from '$lib/stores';
 	import _ from 'lodash';
 
-	let next_tetromino_state: string[][];
-	let game_mode: string;
-
 	const aborter = new AbortController();
 	const FPS = 60;
 	const INTERVAL = 1000 / FPS;
@@ -299,9 +296,9 @@
 		{#key $score}
 			<Score score={$score} level={$level} lines={$linesCleared} />
 		{/key}
-		{#key nextTetromino}
-			<NextTetrominoDisplay board={nextTetromino} />
-		{/key}
+		<!-- {#key nextTetromino}
+			<NextTetrominoDisplay board={$nextTetromino} />
+		{/key} -->
 		{#key mode}
 			<GameMode gameMode={$mode} />
 		{/key}

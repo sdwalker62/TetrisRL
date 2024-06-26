@@ -2,7 +2,6 @@
 	export let gameMode: string = 'ai';
 	import { Joystick, Bot } from 'lucide-svelte';
 	import * as Card from '$lib/components/ui/card';
-	import { Description } from 'formsnap';
 </script>
 
 <Card.Root class="min-w-full">
