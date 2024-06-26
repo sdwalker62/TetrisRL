@@ -29,27 +29,13 @@
 	const INTERVAL = 1000 / FPS;
 	// const INTERVAL = 500;
 
-	async function fetchBoardState() {
-		try {
-			const response = await fetch('/api/render', {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-			const data = await response.json();
-			boardState.set(data.boardState);
-		} catch (error) {
-			console.error('Error fetching board state:', error);
-		}
-	}
-
-	async function fetchBoardStateStream(url: string, { signal }: { signal: AbortSignal }) {
+	async function fetchBoardStateStream(url: string, { signal }: { signal: AbortController }) {
 		let prev_state = null;
-		while (!signal.aborted) {
+		while (!signal.abort) {
 			try {
 				const response = await fetch(url, signal);
-				for await (const chunk of response.body) {
+				// @ts-ignore
+				for await (const chunk of response.body!) {
 					const decoded_chunk_str = new TextDecoder().decode(chunk);
 					let decoded_chunk = JSON.parse(decoded_chunk_str);
 					// Check if chunk contains board data, skip otherwise
