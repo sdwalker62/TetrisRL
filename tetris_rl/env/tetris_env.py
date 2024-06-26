@@ -229,7 +229,7 @@ class TetrisEnv(Env):
                 self.cur_tetromino_pos = (20, 3)
 
         self.cur_tetromino = next_tetromino
-        representation = self.cur_tetromino._get_representation()
+        representation = self.cur_tetromino.get_representation()
         self.ghost_playfield = self._create_new_ghost_playfield()
         self.ghost_playfield[
             self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
@@ -285,7 +285,7 @@ class TetrisEnv(Env):
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend"""
-        representation = self.cur_tetromino._get_representation()
+        representation = self.cur_tetromino.get_representation()
         arr = self.playfield.copy()
         arr[
             self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
@@ -309,6 +309,14 @@ class TetrisEnv(Env):
                     "level": 2,
                     "lines_cleared": 3,
                 }
+            ),
+            headers={"Content-Type": "application/json"},
+            timeout=TIME_OUT,
+        )
+        requests.post(
+            "http://localhost:8000/tetris/next_tetromino",
+            data=json.dumps(
+                {"representation": self.bag[0].get_representation().tolist()}
             ),
             headers={"Content-Type": "application/json"},
             timeout=TIME_OUT,

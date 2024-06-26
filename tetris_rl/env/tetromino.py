@@ -33,13 +33,13 @@ class Tetromino:
 
     def rotate_clockwise(self) -> np.ndarray:
         self.current_position = (self.current_position + 1) % len(self.positions)
-        return self._get_representation()
+        return self.get_representation()
 
     def rotate_counter_clockwise(self) -> np.ndarray:
         self.current_position = (self.current_position - 1) % len(self.positions)
-        return self._get_representation()
+        return self.get_representation()
 
-    def _get_representation(self) -> np.ndarray:
+    def get_representation(self) -> np.ndarray:
         return self.positions[self.current_position]
 
     def spawn(self) -> np.ndarray:

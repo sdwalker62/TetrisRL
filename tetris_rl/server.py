@@ -25,6 +25,7 @@ app.add_middleware(
 TETROMINO_IDS = ["E", "I", "O", "T", "S", "Z", "J", "L"]
 N_COLS = 10
 N_ROWS = 20
+TIMEOUT = 10
 
 render_frames = []
 action_buffer = []
@@ -48,11 +49,25 @@ def get_board():
     return JSONResponse(content={"board_state": frame})
 
 
-@app.get("/tetris/next_tetromino")
-def get_next_tetromino():
-    next_tetromino = generate_random_next_tetromino()
-    json_data = jsonable_encoder(next_tetromino)
-    return JSONResponse(content={"next_tetromino": json_data})
+@app.post("/tetris/next_tetromino")
+async def send_next_tetromino(next_tetromino_data: Request):
+    r"""Send the next tetromino to the frontend for rendering"""
+    next_tetromino = await next_tetromino_data.json()
+    arr = np.array(next_tetromino["representation"])
+    arr = np.where(arr == 0.0, "E", arr)
+    arr = np.where(arr == "1", "I", arr)
+    arr = np.where(arr == "2", "J", arr)
+    arr = np.where(arr == "3", "L", arr)
+    arr = np.where(arr == "4", "O", arr)
+    arr = np.where(arr == "5", "S", arr)
+    arr = np.where(arr == "6", "T", arr)
+    arr = np.where(arr == "7", "Z", arr)
+    requests.post(
+        "http://localhost:5173/api/next_tetromino",
+        json={"representation": arr.tolist()},
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT,
+    )
 
 
 @app.get("/tetris/statistics")
@@ -96,7 +111,6 @@ async def add_frame(frame_data: Request):
 @app.post("/tetris/mode")
 async def add_mode(mode: Request):
     data = await mode.json()
-    print(data["mode"])
     requests.post(
         "http://localhost:5173/api/mode",
         json={"mode": data["mode"]},

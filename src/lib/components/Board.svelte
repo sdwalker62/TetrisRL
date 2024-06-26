@@ -2,7 +2,6 @@
 	import _ from 'lodash';
 	import Tile from './Tile.svelte';
 
-	const tetromino_id_strings = ['I', 'O', 'T', 'J', 'L', 'S', 'Z', 'E'];
 	// create a random board for testing if not provided one
 	export let board: string[][] = _.times(20, () => _.times(10, () => 'E'));
 </script>

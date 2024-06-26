@@ -4,7 +4,6 @@
 	import NextTetrominoDisplay from '$lib/components/NextTetrominoDisplay.svelte';
 	import GameMode from '$lib/components/GameMode.svelte';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
 	import { Separator } from '$lib/components/ui/separator';
 	import Sun from 'svelte-radix/Sun.svelte';
 	import Moon from 'svelte-radix/Moon.svelte';
@@ -18,9 +17,6 @@
 	import _ from 'lodash';
 
 	const aborter = new AbortController();
-	const FPS = 60;
-	const INTERVAL = 1000 / FPS;
-	// const INTERVAL = 500;
 
 	async function streamLinesCleared(url: string, { signal }: { signal: AbortController }) {
 		let prevLinesCleared = null;
@@ -172,7 +168,6 @@
 							prev_state = decoded_chunk;
 						}
 						if (!_.isEqual(decoded_chunk.boardState, prev_state.boardState)) {
-							console.log('Response', decoded_chunk);
 							boardState.set(decoded_chunk.boardState);
 							prev_state = decoded_chunk;
 						}
@@ -203,9 +198,9 @@
 						// Initialize prevTetromino with first chunk so we can compare
 						if (!prevTetromino) {
 							prevTetromino = decoded_chunk;
+							nextTetromino.set(decoded_chunk.representation);
 						}
 						if (!_.isEqual(decoded_chunk.representation, prevTetromino.representation)) {
-							console.log('Response', decoded_chunk);
 							nextTetromino.set(decoded_chunk.representation);
 							prevTetromino = decoded_chunk;
 						}
@@ -255,19 +250,8 @@
 		fetchBoardStateStream('/api/render/', { signal: aborter.signal });
 		streamNextTetromino('/api/next_tetromino/', { signal: aborter.signal });
 		streamMode('/api/mode/', { signal: aborter.signal });
-		const interval = setInterval(async () => {
-			// fetchBoardState();
-			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');
-			const next_tetromino_data = await next_tetromino_response.json();
-			next_tetromino_state = next_tetromino_data.next_tetromino;
-
-			const game_mode_response = await fetch('http://localhost:8000/tetris/game_mode');
-			const game_mode_data = await game_mode_response.json();
-			game_mode = game_mode_data.game_mode;
-		}, INTERVAL);
 		return () => {
 			document.removeEventListener('keydown', handleKeyPress);
-			clearInterval(interval);
 		};
 	});
 </script>
@@ -296,10 +280,12 @@
 		{#key $score}
 			<Score score={$score} level={$level} lines={$linesCleared} />
 		{/key}
-		<!-- {#key nextTetromino}
-			<NextTetrominoDisplay board={$nextTetromino} />
-		{/key} -->
-		{#key mode}
+		{#key $nextTetromino}
+			{#if $nextTetromino}
+				<NextTetrominoDisplay board={$nextTetromino} />
+			{/if}
+		{/key}
+		{#key $mode}
 			<GameMode gameMode={$mode} />
 		{/key}
 	</div>

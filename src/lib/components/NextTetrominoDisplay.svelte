@@ -3,11 +3,9 @@
 	import Tile from './Tile.svelte';
 	import * as Card from '$lib/components/ui/card';
 
-	const tetromino_id_strings = ['I', 'O', 'T', 'J', 'L', 'S', 'Z', 'E'];
 	// create a random board for testing if not provided one
-	export let board: string[][] = _.times(4, () =>
-		_.times(4, () => _.sample(tetromino_id_strings)!)
-	);
+	export let board: string[][] = _.times(4, () => _.times(4, () => 'E'));
+	console.log(board);
 </script>
 
 <Card.Root class="min-w-full">
