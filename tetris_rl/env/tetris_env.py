@@ -17,6 +17,8 @@ from gymnasium import Env, spaces
 
 from tetris_rl.env.tetromino import Tetromino
 
+TIME_OUT = 10
+
 
 class TetrisEnv(Env):
     r"""Implements the Tetris environment for OpenAI Gym."""
@@ -269,12 +271,14 @@ class TetrisEnv(Env):
             "http://localhost:8000/tetris/mode",
             data=json.dumps({"mode": "human" if self.manual_play else "bot"}),
             headers={"Content-Type": "application/json"},
+            timeout=TIME_OUT,
         )
         if self.manual_play:
             requests.post(
                 "http://localhost:8000/tetris/clear_action_buffer",
                 data=json.dumps({"should_clear": True}),
                 headers={"Content-Type": "application/json"},
+                timeout=TIME_OUT,
             )
 
         return self.playfield, {}
@@ -290,18 +294,25 @@ class TetrisEnv(Env):
             + representation.shape[1],
         ] += representation
         arr = arr[20:]  # only render the viewable portion of the playfield
-        data = json.dumps({"board": arr.tolist()})
-        stats = json.dumps(
-            {
-                "score": 1,
-                "level": 2,
-                "lines_cleared": 3,
-            }
-        )
-        headers = {"Content-Type": "application/json"}
         time.sleep(1 / self.metadata["render_fps"])
-        requests.post("http://localhost:8000/tetris/frame", data=data, headers=headers)
-        requests.post("http://localhost:8000/tetris/stats", data=stats, headers=headers)
+        requests.post(
+            "http://localhost:8000/tetris/frame",
+            data=json.dumps({"board": arr.tolist()}),
+            headers={"Content-Type": "application/json"},
+            timeout=TIME_OUT,
+        )
+        requests.post(
+            "http://localhost:8000/tetris/stats",
+            data=json.dumps(
+                {
+                    "score": 1,
+                    "level": 2,
+                    "lines_cleared": 3,
+                }
+            ),
+            headers={"Content-Type": "application/json"},
+            timeout=TIME_OUT,
+        )
 
     def close(self):
         r"""Closing logic for the environment."""
