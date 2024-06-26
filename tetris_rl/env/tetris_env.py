@@ -287,9 +287,17 @@ class TetrisEnv(Env):
         ] += representation
         arr = arr[20:]  # only render the viewable portion of the playfield
         data = json.dumps({"board": arr.tolist()})
+        stats = json.dumps(
+            {
+                "score": 1,
+                "level": 2,
+                "lines_cleared": 3,
+            }
+        )
         headers = {"Content-Type": "application/json"}
         time.sleep(1 / self.metadata["render_fps"])
         requests.post("http://localhost:8000/tetris/frame", data=data, headers=headers)
+        requests.post("http://localhost:8000/tetris/stats", data=stats, headers=headers)
 
     def close(self):
         r"""Closing logic for the environment."""

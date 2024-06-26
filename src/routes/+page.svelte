@@ -14,20 +14,116 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PersonalHighScore from '$lib/components/PersonalHighScore.svelte';
 	import GlobalHighScore from '$lib/components/GlobalHighScore.svelte';
-	import { boardState } from '$lib/stores';
+	import { boardState, linesCleared, score, level } from '$lib/stores';
 	import _ from 'lodash';
 
-	let board_state: string[][];
 	let next_tetromino_state: string[][];
-	let score: number = 0;
-	let level: number = 0;
-	let lines: number = 0;
 	let game_mode: string;
 
 	const aborter = new AbortController();
 	const FPS = 60;
 	const INTERVAL = 1000 / FPS;
 	// const INTERVAL = 500;
+
+	async function streamLinesCleared(url: string, { signal }: { signal: AbortController }) {
+		let prevLinesCleared = null;
+		while (!signal.abort) {
+			try {
+				const response = await fetch(url, signal);
+				// @ts-ignore
+				for await (const chunk of response.body!) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains lines data, skip otherwise
+					if (Object.keys(decoded_chunk).includes('linesCleared')) {
+						// Initialize prevLinesCleared with first chunk so we can compare
+						if (!prevLinesCleared) {
+							prevLinesCleared = decoded_chunk;
+							linesCleared.set(decoded_chunk.linesCleared);
+						}
+						if (decoded_chunk.linesCleared !== prevLinesCleared.linesCleared) {
+							linesCleared.set(decoded_chunk.linesCleared);
+							prevLinesCleared = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
+		}
+	}
+
+	async function streamLevel(url: string, { signal }: { signal: AbortController }) {
+		let prevLevel = null;
+		while (!signal.abort) {
+			try {
+				const response = await fetch(url, signal);
+				// @ts-ignore
+				for await (const chunk of response.body!) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains level data, skip otherwise
+					if (Object.keys(decoded_chunk).includes('level')) {
+						// Initialize prevLevel with first chunk so we can compare
+						if (!prevLevel) {
+							prevLevel = decoded_chunk;
+							level.set(decoded_chunk.level);
+						}
+						if (decoded_chunk.level !== prevLevel.level) {
+							console.log('Level', decoded_chunk);
+							level.set(decoded_chunk.level);
+							prevLevel = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
+		}
+	}
+
+	async function streamScore(url: string, { signal }: { signal: AbortController }) {
+		let prevScore = null;
+		while (!signal.abort) {
+			try {
+				const response = await fetch(url, signal);
+				// @ts-ignore
+				for await (const chunk of response.body!) {
+					const decoded_chunk_str = new TextDecoder().decode(chunk);
+					let decoded_chunk = JSON.parse(decoded_chunk_str);
+					// Check if chunk contains score data, skip otherwise
+					if (Object.keys(decoded_chunk).includes('score')) {
+						// Initialize prevScore with first chunk so we can compare
+						if (!prevScore) {
+							prevScore = decoded_chunk;
+							score.set(decoded_chunk.score);
+						}
+						if (decoded_chunk.score !== prevScore.score) {
+							score.set(decoded_chunk.score);
+							prevScore = decoded_chunk;
+						}
+					}
+				}
+			} catch (e) {
+				if (e instanceof TypeError) {
+					console.error(e);
+					console.error('TypeError: Browser may not support async iteration');
+				} else {
+					console.error(`Error in async iterator: ${e}.`);
+				}
+			}
+		}
+	}
 
 	async function fetchBoardStateStream(url: string, { signal }: { signal: AbortController }) {
 		let prev_state = null;
@@ -89,18 +185,15 @@
 
 	onMount(() => {
 		document.addEventListener('keydown', handleKeyPress);
+		streamLevel('/api/statistics/level/', { signal: aborter.signal });
+		streamLinesCleared('/api/statistics/lines_cleared/', { signal: aborter.signal });
+		streamScore('/api/statistics/score/', { signal: aborter.signal });
 		fetchBoardStateStream('/api/render/', { signal: aborter.signal });
 		const interval = setInterval(async () => {
 			// fetchBoardState();
 			const next_tetromino_response = await fetch('http://localhost:8000/tetris/next_tetromino');
 			const next_tetromino_data = await next_tetromino_response.json();
 			next_tetromino_state = next_tetromino_data.next_tetromino;
-
-			const stats_response = await fetch('http://localhost:8000/tetris/statistics');
-			const stats_data = await stats_response.json();
-			score = stats_data.score;
-			level = stats_data.level;
-			lines = stats_data.lines;
 
 			const game_mode_response = await fetch('http://localhost:8000/tetris/game_mode');
 			const game_mode_data = await game_mode_response.json();
@@ -134,7 +227,9 @@
 			alt="Tetris Logo"
 			class="p-4"
 		/>
-		<Score {score} {level} {lines} />
+		{#key $score}
+			<Score score={$score} level={$level} lines={$linesCleared} />
+		{/key}
 		{#key next_tetromino_state}
 			<NextTetrominoDisplay board={next_tetromino_state} />
 		{/key}

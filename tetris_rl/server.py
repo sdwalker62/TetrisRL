@@ -93,6 +93,34 @@ async def add_frame(frame_data: Request):
     )
 
 
+@app.post("/tetris/stats")
+async def add_statistics(stats: Request):
+    data = await stats.json()
+    score = data["score"]
+    level = data["level"]
+    lines_cleared = data["lines_cleared"]
+
+    headers = {"Content-Type": "application/json"}
+
+    requests.post(
+        "http://localhost:5173/api/statistics/level",
+        json={"level": level},
+        headers=headers,
+    )
+
+    requests.post(
+        "http://localhost:5173/api/statistics/score",
+        json={"score": score},
+        headers=headers,
+    )
+
+    requests.post(
+        "http://localhost:5173/api/statistics/lines_cleared",
+        json={"linesCleared": lines_cleared},
+        headers=headers,
+    )
+
+
 class KeypressEvent(BaseModel):
     key: str
     timestamp: datetime.datetime
@@ -151,4 +179,3 @@ async def clear_action_buffer(data: ClearActionEvent):
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
     # main()
-    
