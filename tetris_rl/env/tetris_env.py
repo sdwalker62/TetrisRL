@@ -26,7 +26,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     metadata = {"render_modes": ["web_viewer"], "render_fps": 7}
     playfield_width = 10  # Number of columns in the playfield
     visual_height = 20  # Number of rows visible to the player
-    buffer_height = 20  # Number of rows offscreen for spawning and rotating tetrminos
+    buffer_height = (
+        20  # Number of rows offscreen for spawning and rotating tetrminos
+    )
     tetromino_ids = ["I", "J", "L", "O", "S", "T", "Z"]
 
     def __init__(self, render_mode=None, manual_play=False):
@@ -56,7 +58,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         )
         self.reward_range = None
         self.spec = None
-        assert render_mode is None or render_mode in self.metadata["render_modes"]
+        assert (
+            render_mode is None or render_mode in self.metadata["render_modes"]
+        )
         self.render_mode = render_mode
 
         self.playfield = self._init_playfield()
@@ -158,8 +162,14 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         return self.playfield, 0, False, False, {}
 
     def _update_gravity(self):
-        r"""Update the gravity value based on the current level."""
-        pass
+        r"""Update the gravity value based on the current level
+        using the equation found here:
+
+        https://harddrop.com/wiki/Tetris_Worlds
+        """
+        time_spent_per_row = (0.8 - (self.current_level - 1) * 0.007) ** (
+            self.current_level - 1
+        )
 
     def _move(self, action) -> tuple[int, int]:
         match action:
@@ -211,7 +221,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             return left_edge < 0
         right_edge = (
             proposed_pos[1]
-            + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
+            + self.cur_tetromino.right_action_oob[
+                self.cur_tetromino.current_position
+            ]
         )
         print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
         return right_edge >= self.playfield_width
@@ -270,7 +282,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
         """
-        return np.any(np.logical_and(self.ghost_playfield > 0, self.playfield > 0))
+        return np.any(
+            np.logical_and(self.ghost_playfield > 0, self.playfield > 0)
+        )
 
     def _spawn_tetromino(self) -> None:
         r"""Spawn a new tetromino at the top of the playfield.
@@ -299,7 +313,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         ] += representation
 
     def _create_new_ghost_playfield(self):
-        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
+        return np.zeros(
+            (self.visual_height + self.buffer_height, self.playfield_width)
+        )
 
     def _update_ghost(self, shift: tuple):
         r"""Update the ghost piece to reflect the current position of the active piece."""
@@ -317,7 +333,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _init_playfield(self) -> np.ndarray:
         r"""Creates a default playfield with no tetrominos."""
-        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
+        return np.zeros(
+            (self.visual_height + self.buffer_height, self.playfield_width)
+        )
 
     def _refill_bag(self) -> list:
         r"""Populates the bag with a random ordering of the seven tetrominos.

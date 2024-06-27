@@ -3,9 +3,11 @@ import numpy as np
 
 class Tetromino:
     positions = []
-    current_position = 0
+    existence_time = 0
+    is_oob = False
+    is_colliding = False
 
-    def __init__(self, type: str):
+    def __init__(self, type: str, x: int, y: int):
         match type:
             case "I":
                 self.__class__ = ITetromino
