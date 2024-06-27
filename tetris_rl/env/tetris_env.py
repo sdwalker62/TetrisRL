@@ -80,13 +80,61 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             (self.visual_height + self.buffer_height, self.playfield_width)
         )
 
-    def step(self, action):
-        r"""Take a single step in the environment."""
+        self.current_level = 0
+        self.gravity = 0
 
+    def step(self, action):
+        """Takes a single step of the environment.
+
+        Actions every step:
+
+        Steps should align with the tick rate of the game!
+
+        1. [ ] Retrieve current_level and calculate gravity, store gravity value
+            a. Every step may not apply gravity, check the stored gravity value
+            b. Compare the stored gravity value with the step number
+            c. Move down when step mod gravity rate == 0
+        2. [ ] Calculate proposed position from action
+            a. Check if the proposed move causes a collision
+                i. If the action is a rotation, check for wall kicks (optional)
+                ii. If the collision is below, the piece has landed
+            b. If it is a left or right move, check if it is out of bounds
+                i. If it is out of bounds, do not move the piece
+            c. Check if the piece has landed on the ground
+        3. [ ] Update the position of the current piece with the proposed
+        4. [ ] Check for line clears
+        5. [ ] Check for game over
+        6. [ ] Spawn a new piece
+        7. [ ] Calculate score
+        8. [ ] Calculate level
+            a. Update gravity
+        9. [ ] Update linesCleared
+        10. [ ] Stream statistics to the frontend
+        11. [ ] Render the playfield
+
+        Args:
+            action (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        self._update_gravity()
+        should_render = True
         # next_pos = self._move(action)
 
         # if self._check_if_oob(next_pos):
         #     next_pos = self.cur_tetromino_pos
+
+        # From looking at the online tetris, there is always a gravity applied
+        # to the piece even if you move it, so moving it left and right
+        # still cause it to go down after awhile, yet you can get a few
+        # left and right moves in before the piece goes down.
+
+        """ 
+        
+        
+        Calculate tick rate
+        """
 
         # Check if OOB
         # Check for collisions
@@ -98,18 +146,20 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         #   Spawn new piece
 
         proposed_pos = self._move(action)
-        should_render = True
-        if not self._check_if_oob(proposed_pos, action == 0):
-            print("Not out of bounds")
-            self.cur_tetromino_pos = proposed_pos
-        else:
-            should_render = False
-            print("Out of bounds")
+        if action in [0, 1]:
+            if not self._check_if_oob(proposed_pos, action == 0):
+                self.cur_tetromino_pos = proposed_pos
+            else:
+                should_render = False
 
         if should_render and self.render_mode == "web_viewer":
             self.render()
 
         return self.playfield, 0, False, False, {}
+
+    def _update_gravity(self):
+        r"""Update the gravity value based on the current level."""
+        pass
 
     def _move(self, action) -> tuple[int, int]:
         match action:
@@ -131,9 +181,17 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             case 3:  # hard-drop
                 pass
             case 4:  # clockwise rotation
-                pass
+                self.cur_tetromino.rotate_clockwise()
+                return (
+                    self.cur_tetromino_pos[0] + 1,
+                    self.cur_tetromino_pos[1],
+                )
             case 5:  # counter-clockwise rotation
-                pass
+                self.cur_tetromino.rotate_counter_clockwise()
+                return (
+                    self.cur_tetromino_pos[0] + 1,
+                    self.cur_tetromino_pos[1],
+                )
             case _:
                 return (
                     self.cur_tetromino_pos[0] + 1,
@@ -151,15 +209,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             )
             print(f"Collided w/ left edge: {left_edge < 0}")
             return left_edge < 0
-        else:
-            right_edge = (
-                proposed_pos[1]
-                + self.cur_tetromino.right_action_oob[
-                    self.cur_tetromino.current_position
-                ]
-            )
-            print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
-            return right_edge >= self.playfield_width
+        right_edge = (
+            proposed_pos[1]
+            + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
+        )
+        print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
+        return right_edge >= self.playfield_width
 
     def _check_if_landed(self):
         r"""Check if the current tetromino in play has landed on the playfield."""
