@@ -1,4 +1,5 @@
-r"""
+r"""Implements the Tetris environment for OpenAI Gym.
+
 For more information visit
 https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/
 
@@ -31,7 +32,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     )
     tetromino_ids = ["I", "J", "L", "O", "S", "T", "Z"]
 
-    def __init__(self, render_mode=None, manual_play=False):
+    def __init__(
+        self,
+        render_mode: str = None,
+        manual_play: bool = False,
+    ) -> None:
+        r"""Initialize the event loop and game logic."""
         self.manual_play = manual_play
         """
         Actions = {
@@ -54,7 +60,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             5: S,
         """
         self.observation_space = spaces.MultiDiscrete(
-            np.full((self.playfield_width, self.visual_height), 5)
+            np.full((self.playfield_width, self.visual_height), 5),
         )
         self.reward_range = None
         self.spec = None
@@ -65,7 +71,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         self.playfield = self._init_playfield()
         """
-        All positions are referenced from the top-left corner of the np.array 
+        All positions are referenced from the top-left corner of the np.array
         representing the piece.
         """
         self.cur_tetromino_pos = None
@@ -75,24 +81,24 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             self._refill_bag()
         )  # The next seven tetrominos to be played, gets refilled when empty
         """
-        This piece will be used to test for collisions. An empty playfield will 
-        be created consisting of all zeroes except where the proposed tetromino 
-        will be placed. This will be used to test for collisions by creating a 
+        This piece will be used to test for collisions. An empty playfield will
+        be created consisting of all zeroes except where the proposed tetromino
+        will be placed. This will be used to test for collisions by creating a
         mask and if any values are non-zero it will indicate a collision.
         """
         self.ghost_playfield = np.zeros(
-            (self.visual_height + self.buffer_height, self.playfield_width)
+            (self.visual_height + self.buffer_height, self.playfield_width),
         )
 
         self.current_level = 0
         self.gravity = 0
 
-    def step(self, action):
-        """Takes a single step of the environment.
+    def step(self, action) -> tuple[np.ndarray, float, bool, bool, dict]:
+        """Take a single step of the environment.
 
-        Actions every step:
-
-        Steps should align with the tick rate of the game!
+        Actions every step
+        ------------------
+        Note: Steps should align with the tick rate of the game!
 
         1. [ ] Retrieve current_level and calculate gravity, store gravity value
             a. Every step may not apply gravity, check the stored gravity value
@@ -116,11 +122,16 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         10. [ ] Stream statistics to the frontend
         11. [ ] Render the playfield
 
-        Args:
-            action (_type_): _description_
+        Parameters
+        ----------
+        action : int
+            action id
 
-        Returns:
-            _type_: _description_
+        Returns
+        -------
+        tuple[np.ndarray, float, bool, bool, dict]:
+            information about the current episode including the next state
+
         """
         self._update_gravity()
         should_render = True
@@ -133,12 +144,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         # to the piece even if you move it, so moving it left and right
         # still cause it to go down after awhile, yet you can get a few
         # left and right moves in before the piece goes down.
-
-        """ 
-        
-        
-        Calculate tick rate
-        """
 
         # Check if OOB
         # Check for collisions
@@ -162,7 +167,8 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         return self.playfield, 0, False, False, {}
 
     def _update_gravity(self):
-        r"""Update the gravity value based on the current level
+        r"""Update the gravity value based on the current level.
+
         using the equation found here:
 
         https://harddrop.com/wiki/Tetris_Worlds
@@ -233,8 +239,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         pass
 
     def _check_if_collision(self) -> bool:
-        r"""Checks if the current tetromino in play has collided with any static
-        tetrominos.
+        r"""Check if the current tetromino is colliding.
 
         This will also be used for wall kicks.
 
@@ -289,7 +294,8 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def _spawn_tetromino(self) -> None:
         r"""Spawn a new tetromino at the top of the playfield.
 
-        All tetrominos spawn on rows 21 and 22 of the playfield as per the guidelines.
+        All tetrominos spawn on rows 21 and 22 of the playfield as per the
+        guidelines.
         """
         if len(self.bag) == 0:
             self.bag = self._refill_bag()
@@ -322,7 +328,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.ghost_playfield = np.roll(self.ghost_playfield, shift)
 
     def _check_if_game_over(self):
-        r"""Checks if a terminal condition has been met.
+        r"""Check if a terminal condition has been met.
 
         In Tetris the following conditions will terminate the episode:
             1. A piece is spawned overlapping at least one block in the playfield.
@@ -332,20 +338,21 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         pass
 
     def _init_playfield(self) -> np.ndarray:
-        r"""Creates a default playfield with no tetrominos."""
+        r"""Create a default playfield with no tetrominos."""
         return np.zeros(
             (self.visual_height + self.buffer_height, self.playfield_width)
         )
 
     def _refill_bag(self) -> list:
-        r"""Populates the bag with a random ordering of the seven tetrominos.
-        All seven tetrominos are included in the bag.
+        r"""Populate the bag with a random ordering of the seven tetrominos.
+
+        Note: All seven tetrominos are included in the bag.
         """
         ids = random.sample(self.tetromino_ids, len(self.tetromino_ids))
         return [Tetromino(id) for id in ids]
 
-    def reset(self, seed=None, options=None):  # pylint: disable=arguments-differ
-        r"""Resets the environment to its initial state."""
+    def reset(self, seed: int = None, options: dict = None):  # pylint: disable=arguments-differ
+        r"""Reset the environment to its initial state."""
         self._spawn_tetromino()
         requests.post(
             "http://localhost:8000/tetris/mode",
@@ -364,7 +371,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         return self.playfield, {}
 
     def render(self) -> np.ndarray:
-        r"""Render a single frame for the frontend"""
+        r"""Render a single frame for the frontend."""
         representation = self.cur_tetromino.get_representation()
         arr = self.playfield.copy()
         arr[
@@ -403,5 +410,5 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         )
 
     def close(self):
-        r"""Closing logic for the environment."""
+        r"""Close open connections before closing the environment."""
         print("Closing Tetris environment")

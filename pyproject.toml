@@ -29,4 +29,4 @@ target-version = "py311"
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
-select = ["E", "F", "UP", "B", "SIM", "I", "W", "N", "D", "ANN", "ASYNC", "A", "COM", "CPY", "C4", "ISC", "EXE", "LOG", "G", "PIE", "PYI", "PT", "Q", "SLF", "PTH", "ARG", "INT", "TD", "NPY"]
+select = ["E", "F", "UP", "B", "SIM", "I", "W", "N", "D", "ASYNC", "A", "COM", "CPY", "C4", "ISC", "EXE", "LOG", "G", "PIE", "PYI", "PT", "Q", "SLF", "PTH", "ARG", "INT", "TD", "NPY"]
