@@ -3,11 +3,12 @@ import numpy as np
 
 class Tetromino:
     positions = []
+    current_position = 0
     existence_time = 0
     is_oob = False
     is_colliding = False
 
-    def __init__(self, type: str, x: int, y: int):
+    def __init__(self, type: str):
         match type:
             case "I":
                 self.__class__ = ITetromino
@@ -34,15 +35,11 @@ class Tetromino:
                 raise ValueError(f"Invalid tetromino type: {type}")
 
     def rotate_clockwise(self) -> np.ndarray:
-        self.current_position = (self.current_position + 1) % len(
-            self.positions
-        )
+        self.current_position = (self.current_position + 1) % len(self.positions)
         return self.get_representation()
 
     def rotate_counter_clockwise(self) -> np.ndarray:
-        self.current_position = (self.current_position - 1) % len(
-            self.positions
-        )
+        self.current_position = (self.current_position - 1) % len(self.positions)
         return self.get_representation()
 
     def get_representation(self) -> np.ndarray:

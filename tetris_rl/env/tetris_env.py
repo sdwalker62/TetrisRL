@@ -27,9 +27,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     metadata = {"render_modes": ["web_viewer"], "render_fps": 7}
     playfield_width = 10  # Number of columns in the playfield
     visual_height = 20  # Number of rows visible to the player
-    buffer_height = (
-        20  # Number of rows offscreen for spawning and rotating tetrminos
-    )
+    buffer_height = 20  # Number of rows offscreen for spawning and rotating tetrminos
     tetromino_ids = ["I", "J", "L", "O", "S", "T", "Z"]
 
     def __init__(
@@ -64,9 +62,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         )
         self.reward_range = None
         self.spec = None
-        assert (
-            render_mode is None or render_mode in self.metadata["render_modes"]
-        )
+        assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
         self.playfield = self._init_playfield()
@@ -92,6 +88,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         self.current_level = 0
         self.gravity = 0
+        self.should_spawn_next_piece = False
 
     def step(self, action) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Take a single step of the environment.
@@ -133,6 +130,10 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             information about the current episode including the next state
 
         """
+        # Check if the bag needs refilling
+        if len(self.bag) == 0:
+            self.bag = self._refill_bag()
+
         self._update_gravity()
         should_render = True
         # next_pos = self._move(action)
@@ -155,11 +156,13 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         #   Spawn new piece
 
         proposed_pos = self._move(action)
-        if action in [0, 1]:
-            if not self._check_if_oob(proposed_pos, action == 0):
-                self.cur_tetromino_pos = proposed_pos
-            else:
-                should_render = False
+        print(f"Proposed position: {proposed_pos}")
+        # if action in [0, 1]:
+        #     if not self._check_if_oob(proposed_pos, action == 0):
+        self.cur_tetromino.x = proposed_pos[0]
+        self.cur_tetromino.y = proposed_pos[1]
+        # else:
+        #     should_render = False
 
         if should_render and self.render_mode == "web_viewer":
             self.render()
@@ -180,56 +183,34 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def _move(self, action) -> tuple[int, int]:
         match action:
             case 0:  # left
-                return (
-                    self.cur_tetromino_pos[0],
-                    self.cur_tetromino_pos[1] - 1,
-                )
+                return self.cur_tetromino.x - 1, self.cur_tetromino.y
             case 1:  # right
-                return (
-                    self.cur_tetromino_pos[0],
-                    self.cur_tetromino_pos[1] + 1,
-                )
+                return self.cur_tetromino.x + 1, self.cur_tetromino.y
             case 2:  # soft-drop
-                return (
-                    self.cur_tetromino_pos[0] + 1,
-                    self.cur_tetromino_pos[1],
-                )
+                return self.cur_tetromino.x, self.cur_tetromino.y + 1
             case 3:  # hard-drop
                 pass
             case 4:  # clockwise rotation
                 self.cur_tetromino.rotate_clockwise()
-                return (
-                    self.cur_tetromino_pos[0] + 1,
-                    self.cur_tetromino_pos[1],
-                )
+                return self.cur_tetromino.x, self.cur_tetromino.y + 1
             case 5:  # counter-clockwise rotation
                 self.cur_tetromino.rotate_counter_clockwise()
-                return (
-                    self.cur_tetromino_pos[0] + 1,
-                    self.cur_tetromino_pos[1],
-                )
+                return self.cur_tetromino.x, self.cur_tetromino.y + 1
             case _:
-                return (
-                    self.cur_tetromino_pos[0] + 1,
-                    self.cur_tetromino_pos[1],
-                )
+                return self.cur_tetromino.x, self.cur_tetromino.y + 1
 
     def _check_if_oob(self, proposed_pos: tuple, move_left: bool):
         r"""Check if the current tetromino in play is out of bounds."""
         if move_left:
             left_edge = (
                 proposed_pos[1]
-                + self.cur_tetromino.left_action_oob[
-                    self.cur_tetromino.current_position
-                ]
+                + self.cur_tetromino.left_action_oob[self.cur_tetromino.current_position]
             )
             print(f"Collided w/ left edge: {left_edge < 0}")
             return left_edge < 0
         right_edge = (
             proposed_pos[1]
-            + self.cur_tetromino.right_action_oob[
-                self.cur_tetromino.current_position
-            ]
+            + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
         )
         print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
         return right_edge >= self.playfield_width
@@ -287,9 +268,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
         """
-        return np.any(
-            np.logical_and(self.ghost_playfield > 0, self.playfield > 0)
-        )
+        return np.any(np.logical_and(self.ghost_playfield > 0, self.playfield > 0))
 
     def _spawn_tetromino(self) -> None:
         r"""Spawn a new tetromino at the top of the playfield.
@@ -297,31 +276,25 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         All tetrominos spawn on rows 21 and 22 of the playfield as per the
         guidelines.
         """
-        if len(self.bag) == 0:
-            self.bag = self._refill_bag()
-        next_tetromino = self.bag.pop(0)
-        tetromino_type = next_tetromino.type
+        # It should not be necessary to check for an empty bag since that is
+        # done at the beginning of the environment step
+        self.cur_tetromino = self.bag.pop(0)
+        # remember that rows technically represent the y-axis not the x-axis
+        self.cur_tetromino.x = 3
+        self.cur_tetromino.y = 19 if self.cur_tetromino.type in ["I", "O"] else 19
 
-        match tetromino_type:
-            case "I" | "O":
-                self.cur_tetromino_pos = (21, 3)
-            case "T" | "S" | "Z" | "J" | "L":
-                self.cur_tetromino_pos = (20, 3)
+        # grab the np.ndarray representation of the current piece
+        r = self.cur_tetromino.get_representation()
 
-        self.cur_tetromino = next_tetromino
-        representation = self.cur_tetromino.get_representation()
+        # Create the ghost that we will use for collision detection
         self.ghost_playfield = self._create_new_ghost_playfield()
         self.ghost_playfield[
-            self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
-            + representation.shape[0],
-            self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
-            + representation.shape[1],
-        ] += representation
+            self.cur_tetromino.y : self.cur_tetromino.y + r.shape[0],
+            self.cur_tetromino.x : self.cur_tetromino.x + r.shape[1],
+        ] += r
 
     def _create_new_ghost_playfield(self):
-        return np.zeros(
-            (self.visual_height + self.buffer_height, self.playfield_width)
-        )
+        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _update_ghost(self, shift: tuple):
         r"""Update the ghost piece to reflect the current position of the active piece."""
@@ -339,9 +312,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _init_playfield(self) -> np.ndarray:
         r"""Create a default playfield with no tetrominos."""
-        return np.zeros(
-            (self.visual_height + self.buffer_height, self.playfield_width)
-        )
+        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _refill_bag(self) -> list:
         r"""Populate the bag with a random ordering of the seven tetrominos.
@@ -349,7 +320,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         Note: All seven tetrominos are included in the bag.
         """
         ids = random.sample(self.tetromino_ids, len(self.tetromino_ids))
-        return [Tetromino(id) for id in ids]
+        return [Tetromino(i) for i in ids]
 
     def reset(self, seed: int = None, options: dict = None):  # pylint: disable=arguments-differ
         r"""Reset the environment to its initial state."""
@@ -372,14 +343,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend."""
-        representation = self.cur_tetromino.get_representation()
+        r = self.cur_tetromino.get_representation()
         arr = self.playfield.copy()
         arr[
-            self.cur_tetromino_pos[0] : self.cur_tetromino_pos[0]
-            + representation.shape[0],
-            self.cur_tetromino_pos[1] : self.cur_tetromino_pos[1]
-            + representation.shape[1],
-        ] += representation
+            self.cur_tetromino.y : self.cur_tetromino.y + r.shape[0],
+            self.cur_tetromino.x : self.cur_tetromino.x + r.shape[1],
+        ] += r
         arr = arr[20:]  # only render the viewable portion of the playfield
         time.sleep(1 / self.metadata["render_fps"])
         requests.post(
@@ -395,7 +364,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
                     "score": 1,
                     "level": 2,
                     "lines_cleared": 3,
-                }
+                },
             ),
             headers={"Content-Type": "application/json"},
             timeout=TIME_OUT,
@@ -403,7 +372,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         requests.post(
             "http://localhost:8000/tetris/next_tetromino",
             data=json.dumps(
-                {"representation": self.bag[0].get_representation().tolist()}
+                {"representation": self.bag[0].get_representation().tolist()},
             ),
             headers={"Content-Type": "application/json"},
             timeout=TIME_OUT,
