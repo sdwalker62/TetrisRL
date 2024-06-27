@@ -135,11 +135,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             self.bag = self._refill_bag()
 
         self._update_gravity()
-        should_render = True
-        # next_pos = self._move(action)
-
-        # if self._check_if_oob(next_pos):
-        #     next_pos = self.cur_tetromino_pos
 
         # From looking at the online tetris, there is always a gravity applied
         # to the piece even if you move it, so moving it left and right
@@ -156,16 +151,15 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         #   Spawn new piece
 
         proposed_pos = self._move(action)
-        print(f"Proposed position: {proposed_pos}")
-        # if action in [0, 1]:
-        #     if not self._check_if_oob(proposed_pos, action == 0):
-        self.cur_tetromino.x = proposed_pos[0]
-        self.cur_tetromino.y = proposed_pos[1]
-        # else:
-        #     should_render = False
 
-        if should_render and self.render_mode == "web_viewer":
-            self.render()
+        # Check if proposed move is out of bounds
+        pos_oob = action in [0, 1] and self._check_if_oob(proposed_pos, action == 0)
+
+        if not pos_oob:
+            self.cur_tetromino.x = proposed_pos[0]
+            self.cur_tetromino.y = proposed_pos[1]
+            if self.render_mode == "web_viewer":
+                self.render()
 
         return self.playfield, 0, False, False, {}
 
@@ -203,13 +197,13 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         r"""Check if the current tetromino in play is out of bounds."""
         if move_left:
             left_edge = (
-                proposed_pos[1]
+                proposed_pos[0]
                 + self.cur_tetromino.left_action_oob[self.cur_tetromino.current_position]
             )
             print(f"Collided w/ left edge: {left_edge < 0}")
             return left_edge < 0
         right_edge = (
-            proposed_pos[1]
+            proposed_pos[0]
             + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
         )
         print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
