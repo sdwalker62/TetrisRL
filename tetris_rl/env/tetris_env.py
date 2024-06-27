@@ -176,9 +176,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         https://harddrop.com/wiki/Tetris_Worlds
         """
-        time_spent_per_row = (0.8 - (self.current_level - 1) * 0.007) ** (
-            self.current_level - 1
-        )
+        # time_spent_per_row = (0.8 - (self.current_level - 1) * 0.007) ** (
+        #     self.current_level - 1
+        # )
 
     def _move(self, action) -> tuple[int, int]:
         match action:
@@ -217,7 +217,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _check_if_landed(self):
         r"""Check if the current tetromino in play has landed on the playfield."""
-        pass
 
     def _check_if_collision(self) -> bool:
         r"""Check if the current tetromino is colliding.
@@ -308,7 +307,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             2. A piece locks completely above the visible portion of the playfield.
             3. A piece is pished above the 20-row buffer zone.
         """
-        pass
 
     def _init_playfield(self) -> np.ndarray:
         r"""Create a default playfield with no tetrominos."""
@@ -322,7 +320,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         ids = random.sample(self.tetromino_ids, len(self.tetromino_ids))
         return [Tetromino(i) for i in ids]
 
-    def reset(self, seed: int = None, options: dict = None):  # pylint: disable=arguments-differ
+    def reset(self):  # pylint: disable=arguments-differ
         r"""Reset the environment to its initial state."""
         self._spawn_tetromino()
         requests.post(
