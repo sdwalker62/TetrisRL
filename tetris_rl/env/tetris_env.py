@@ -20,7 +20,7 @@ from tetris_rl.env.tetromino import Tetromino
 TIME_OUT = 10
 
 
-class TetrisEnv(Env):
+class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     r"""Implements the Tetris environment for OpenAI Gym."""
 
     metadata = {"render_modes": ["web_viewer"], "render_fps": 7}
@@ -30,7 +30,6 @@ class TetrisEnv(Env):
     tetromino_ids = ["I", "J", "L", "O", "S", "T", "Z"]
 
     def __init__(self, render_mode=None, manual_play=False):
-        # TODO: Complete the implementation of these params
         self.manual_play = manual_play
         """
         Actions = {
@@ -62,7 +61,8 @@ class TetrisEnv(Env):
 
         self.playfield = self._init_playfield()
         """
-        All positions are referenced from the top-left corner of the np.array representing the piece.
+        All positions are referenced from the top-left corner of the np.array 
+        representing the piece.
         """
         self.cur_tetromino_pos = None
         self.next_tetromino_pos = None
@@ -71,9 +71,10 @@ class TetrisEnv(Env):
             self._refill_bag()
         )  # The next seven tetrominos to be played, gets refilled when empty
         """
-        This piece will be used to test for collisions. An empty playfield will be created consisting of all
-        zeroes except where the proposed tetromino will be placed. This will be used to test for collisions
-        by creating a mask and if any values are non-zero it will indicate a collision.
+        This piece will be used to test for collisions. An empty playfield will 
+        be created consisting of all zeroes except where the proposed tetromino 
+        will be placed. This will be used to test for collisions by creating a 
+        mask and if any values are non-zero it will indicate a collision.
         """
         self.ghost_playfield = np.zeros(
             (self.visual_height + self.buffer_height, self.playfield_width)
@@ -165,11 +166,13 @@ class TetrisEnv(Env):
         pass
 
     def _check_if_collision(self) -> bool:
-        r"""Checks if the current tetromino in play has collided with any static tetrominos.
+        r"""Checks if the current tetromino in play has collided with any static
+        tetrominos.
 
         This will also be used for wall kicks.
 
-        The idea is simple, say we have two small boards where the 1 represents a block and 0 represents an empty space.
+        The idea is simple, say we have two small boards where the 1 represents
+        a block and 0 represents an empty space.
 
         board1 = [
             [1, 0, 0],
@@ -197,7 +200,8 @@ class TetrisEnv(Env):
             [False, False, False]
         ]
 
-        Element-wise logical AND results in an array where the True values are the overlapping blocks.
+        Element-wise logical AND results in an array where the True values are
+        the overlapping blocks.
 
         np.logical_and(board1 > 0, board2 > 0) = [
             [True, False, False],
@@ -205,7 +209,8 @@ class TetrisEnv(Env):
             [False, False, False]
         ]
 
-        We then return the result of np.any() to check if there are any overlapping blocks in the array:
+        We then return the result of np.any() to check if there are any
+        overlapping blocks in the array:
 
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
@@ -243,7 +248,7 @@ class TetrisEnv(Env):
 
     def _update_ghost(self, shift: tuple):
         r"""Update the ghost piece to reflect the current position of the active piece."""
-        self.collision_ghost = np.roll(self.collision_ghost, shift)
+        self.ghost_playfield = np.roll(self.ghost_playfield, shift)
 
     def _check_if_game_over(self):
         r"""Checks if a terminal condition has been met.
@@ -260,11 +265,13 @@ class TetrisEnv(Env):
         return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _refill_bag(self) -> list:
-        r"""Populates the bag with a random ordering of the seven tetrominos. All seven tetrominos are included in the bag."""
+        r"""Populates the bag with a random ordering of the seven tetrominos.
+        All seven tetrominos are included in the bag.
+        """
         ids = random.sample(self.tetromino_ids, len(self.tetromino_ids))
         return [Tetromino(id) for id in ids]
 
-    def reset(self, seed=None, options=None, **kwargs):
+    def reset(self, seed=None, options=None):  # pylint: disable=arguments-differ
         r"""Resets the environment to its initial state."""
         self._spawn_tetromino()
         requests.post(
