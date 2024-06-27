@@ -1,11 +1,13 @@
+r"""This module defines the middleware server that collects episode information
+and sends it to the frontend for rendering.
+"""
+
 import datetime
-import random
 
 import numpy as np
 import requests
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -31,24 +33,6 @@ render_frames = []
 action_buffer = []
 
 
-def generate_random_board() -> list[list[str]]:
-    return [
-        [random.choice(TETROMINO_IDS) for _ in range(N_COLS)] for _ in range(N_ROWS)
-    ]
-
-
-def generate_random_next_tetromino() -> str:
-    return [[random.choice(TETROMINO_IDS) for _ in range(4)] for _ in range(4)]
-
-
-@app.get("/tetris/board")
-def get_board():
-    if len(render_frames) == 0:
-        return [["E" for _ in range(N_COLS)] for _ in range(N_ROWS)]
-    frame = render_frames.pop(0)
-    return JSONResponse(content={"board_state": frame})
-
-
 @app.post("/tetris/next_tetromino")
 async def send_next_tetromino(next_tetromino_data: Request):
     r"""Send the next tetromino to the frontend for rendering"""
@@ -70,23 +54,9 @@ async def send_next_tetromino(next_tetromino_data: Request):
     )
 
 
-@app.get("/tetris/statistics")
-def get_statistics():
-    score = random.randint(0, 10_000)
-    level = random.randint(0, 100)
-    lines = random.randint(0, 1_000)
-    json_data = jsonable_encoder({"score": score, "level": level, "lines": lines})
-    return JSONResponse(content=json_data)
-
-
-@app.get("/tetris/game_mode")
-def get_game_mode():
-    game_mode = random.choice(["ai", "human"])
-    return JSONResponse(content={"game_mode": game_mode})
-
-
 @app.post("/tetris/frame")
 async def add_frame(frame_data: Request):
+    r"""Converts the playfield frame to a format the Svelte can use"""
     data = await frame_data.json()
 
     # convert indices to tetromino ids
@@ -105,21 +75,25 @@ async def add_frame(frame_data: Request):
         "http://localhost:5173/api/render",
         json={"board_state": arr.tolist()},
         headers=headers,
+        timeout=TIMEOUT,
     )
 
 
 @app.post("/tetris/mode")
 async def add_mode(mode: Request):
+    r"""Sends the current play mode to the ui"""
     data = await mode.json()
     requests.post(
         "http://localhost:5173/api/mode",
         json={"mode": data["mode"]},
         headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT,
     )
 
 
 @app.post("/tetris/stats")
 async def add_statistics(stats: Request):
+    r"""Pushes game statistics updates to be parsed by the stream reader"""
     data = await stats.json()
     score = data["score"]
     level = data["level"]
@@ -131,28 +105,34 @@ async def add_statistics(stats: Request):
         "http://localhost:5173/api/statistics/level",
         json={"level": level},
         headers=headers,
+        timeout=TIMEOUT,
     )
 
     requests.post(
         "http://localhost:5173/api/statistics/score",
         json={"score": score},
         headers=headers,
+        timeout=TIMEOUT,
     )
 
     requests.post(
         "http://localhost:5173/api/statistics/lines_cleared",
         json={"linesCleared": lines_cleared},
         headers=headers,
+        timeout=TIMEOUT,
     )
 
 
 class KeypressEvent(BaseModel):
+    r"""Datafields for each time a key is pressed"""
+
     key: str
     timestamp: datetime.datetime
 
 
 @app.post("/tetris/keypress")
 async def receive_keypress(keypress_event: KeypressEvent):
+    r"""Gets the key press event from the user"""
     key = keypress_event.key
     timestamp = keypress_event.timestamp
     action_buffer.append((key, timestamp))
@@ -162,6 +142,7 @@ async def receive_keypress(keypress_event: KeypressEvent):
 
 @app.get("/tetris/action")
 async def get_action():
+    r"""MIGHT GET REMOVED"""
     if len(action_buffer) == 0:
         return JSONResponse(content={"action": "none"})
     action = action_buffer.pop(0)
@@ -169,38 +150,18 @@ async def get_action():
 
 
 class ClearActionEvent(BaseModel):
+    r"""Clears the current action buffer"""
+
     should_clear: bool
 
 
 @app.post("/tetris/clear_action_buffer")
 async def clear_action_buffer(data: ClearActionEvent):
+    r"""Clears the action buffer between episodes"""
     if data.should_clear:
         action_buffer.clear()
     return JSONResponse(content={"status": "success"})
 
 
-# @click.command()
-# @click.option("--mode", default="bot", help="Mode of the game")
-# @click.option("--cfg", help="Configuration file path for algorithm")
-# @click.option(
-#     "--n_episodes", default=1, help="Number of episodes to train/evaluate over"
-# )
-# @click.option("--eval", is_flag=True, help="Evaluate the model (else train)")
-# @click.option("--visualize", is_flag=True, help="Visualize the game with the frontend")
-# def main(mode: str, cfg: str, n_episodes: int, eval: bool, visualize: bool):
-#     if visualize:
-#         # TODO: Implement 60hz tick logic
-#         pass
-
-#     if mode == "bot":
-#         assert cfg is not None, "Please provide a configuration file for the bot"
-#         assert Path(cfg).exists(), f"Cannot find config file at {cfg}"
-#         with open(cfg, "rb") as f:
-#             config = tomllib.load(f)
-
-# episode = Episode(mode="bot")
-
-
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
-    # main()
