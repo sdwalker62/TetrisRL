@@ -154,8 +154,11 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         # Check if proposed move is out of bounds
         is_oob = action in [0, 1] and self._check_if_oob(proposed_pos, action == 0)
+        has_landed = self._check_if_landed()
+        if has_landed:
+            self._spawn_tetromino()
 
-        if not is_oob:
+        if not is_oob and not has_landed:
             self.cur_tetromino.x = proposed_pos[0]
             self.cur_tetromino.y = proposed_pos[1]
             if self.render_mode == "web_viewer":
@@ -207,8 +210,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         right_edge = proposed_pos[0] + col_offset
         return right_edge >= self.playfield_width
 
-    def _check_if_landed(self):
+    def _check_if_landed(self) -> bool:
         r"""Check if the current tetromino in play has landed on the playfield."""
+        bottom = self.cur_tetromino.y + self.cur_tetromino.height
+        if bottom == self.visual_height + self.buffer_height:
+            return True
+        return False
 
     def _check_if_collision(self) -> bool:
         r"""Check if the current tetromino is colliding.
@@ -276,7 +283,8 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         # grab the np.ndarray representation of the current piece
         r = self.cur_tetromino.get_representation()
-
+        self.cur_tetromino.height = r.shape[0]
+        self.cur_tetromino.width = r.shape[1]
         # Create the ghost that we will use for collision detection
         self.ghost_playfield = self._create_new_ghost_playfield()
         self.ghost_playfield[

@@ -11,6 +11,8 @@ class Tetromino:
     existence_time = 0
     is_oob = False
     is_colliding = False
+    height = 0
+    width = 0
 
     def __init__(self, tetromino_type: str):
         r"""Initialize one of the subclasses."""
@@ -51,12 +53,24 @@ class Tetromino:
 
     def get_representation(self) -> np.ndarray:
         r"""Use the np.ndarray for collision detections and rendering."""
-        return self.positions[self.current_position]
+        return self.trim(self.positions[self.current_position])
 
     def spawn(self) -> np.ndarray:
         r"""Spawn with default values."""
         self.current_position = 0
+        r = self.trim(self.positions[0])
+        self.height = r.shape[0]
+        self.width = r.shape[1]
+        print(f"Spawned {self.type} tetromino with shape {r.shape}.")
         return self.positions[0]
+
+    def trim(self, x: np.ndarray) -> np.ndarray:
+        r"""Trim the tetromino to its minimal bounding box."""
+        x = x[1:] if x[0, :].sum() == 0 else x  # trim first row
+        x = x[:-1] if x[-1, :].sum() == 0 else x  # trim last row
+        x = x[:, 1:] if x[:, 0].sum() == 0 else x  # trim first column
+        x = x[:, :-1] if x[:, -1].sum() == 0 else x  # trim last column
+        return x
 
 
 class ITetromino(Tetromino):
