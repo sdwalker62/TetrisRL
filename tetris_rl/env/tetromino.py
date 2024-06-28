@@ -63,8 +63,10 @@ class ITetromino(Tetromino):
     r"""I-shaped tetromino."""
 
     tetromino_idx = 1
-    left_action_oob = [0, 2, 0, 1]
-    right_action_oob = [3, 2, 3, 1]
+    first_non_zero_col_per_idx = [0, 2, 0, 1]
+    last_non_zero_col_per_idx = [3, 2, 3, 1]
+    first_non_zero_row_per_idx = [1, 0, 2, 0]
+    last_non_zero_row_per_idx = [1, 3, 2, 3]
     positions = [
         np.array([[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]]),
         np.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
@@ -77,8 +79,10 @@ class JTetromino(Tetromino):
     r"""J-shaped tetromino."""
 
     tetromino_idx = 2
-    left_action_oob = [0, 1, 0, 0]
-    right_action_oob = [2, 2, 2, 1]
+    first_non_zero_col_per_idx = [0, 1, 0, 0]
+    last_non_zero_col_per_idx = [2, 2, 2, 1]
+    first_non_zero_row_per_idx = [0, 0, 1, 0]
+    last_non_zero_row_per_idx = [1, 2, 2, 2]
     positions = [
         2
         * np.array(
@@ -119,8 +123,10 @@ class LTetromino(Tetromino):
     r"""L-shaped tetromino."""
 
     tetromino_idx = 3
-    left_action_oob = [0, 1, 0, 0]
-    right_action_oob = [2, 2, 2, 1]
+    first_non_zero_col_per_idx = [0, 1, 0, 0]
+    last_non_zero_col_per_idx = [2, 2, 2, 1]
+    first_non_zero_row_per_idx = [0, 0, 1, 0]
+    last_non_zero_row_per_idx = [1, 2, 2, 2]
     positions = [
         3
         * np.array(
@@ -161,8 +167,10 @@ class OTetromino(Tetromino):
     r"""O-shaped tetromino."""
 
     tetromino_idx = 4
-    left_action_oob = [1, 1, 1, 1]
-    right_action_oob = [2, 2, 2, 2]
+    first_non_zero_col_per_idx = [1, 1, 1, 1]
+    last_non_zero_col_per_idx = [2, 2, 2, 2]
+    first_non_zero_row_per_idx = [0, 0, 0, 0]
+    last_non_zero_row_per_idx = [1, 1, 1, 1]
     positions = [
         4
         * np.array(
@@ -203,8 +211,10 @@ class STetromino(Tetromino):
     r"""S-shaped tetromino."""
 
     tetromino_idx = 5
-    left_action_oob = [0, 1, 0, 0]
-    right_action_oob = [2, 2, 2, 1]
+    first_non_zero_col_per_idx = [0, 1, 0, 0]
+    last_non_zero_col_per_idx = [2, 2, 2, 1]
+    first_non_zero_row_per_idx = [0, 0, 1, 0]
+    last_non_zero_row_per_idx = [1, 2, 2, 2]
     positions = [
         5
         * np.array(
@@ -245,8 +255,10 @@ class TTetromino(Tetromino):
     r"""T-shaped tetromino."""
 
     tetromino_idx = 6
-    left_action_oob = [0, 1, 0, 0]
-    right_action_oob = [2, 2, 2, 1]
+    first_non_zero_col_per_idx = [0, 1, 0, 0]
+    last_non_zero_col_per_idx = [2, 2, 2, 1]
+    first_non_zero_row_per_idx = [0, 0, 1, 0]
+    last_non_zero_row_per_idx = [1, 2, 2, 2]
     positions = [
         6
         * np.array(
@@ -287,8 +299,10 @@ class ZTetromino(Tetromino):
     r"""Z-shaped tetromino."""
 
     tetromino_idx = 7
-    left_action_oob = [0, 1, 0, 0]
-    right_action_oob = [2, 2, 2, 1]
+    first_non_zero_col_per_idx = [0, 1, 0, 0]
+    last_non_zero_col_per_idx = [2, 2, 2, 1]
+    first_non_zero_row_per_idx = [0, 0, 1, 0]
+    last_non_zero_row_per_idx = [1, 2, 2, 2]
     positions = [
         7
         * np.array(

@@ -196,15 +196,15 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def _check_if_oob(self, proposed_pos: tuple, move_left: bool):
         r"""Check if the current tetromino in play is out of bounds."""
         if move_left:
-            left_edge = (
-                proposed_pos[0]
-                + self.cur_tetromino.left_action_oob[self.cur_tetromino.current_position]
-            )
+            col_offset = self.cur_tetromino.first_non_zero_col_per_idx[
+                self.cur_tetromino.current_position
+            ]
+            left_edge = proposed_pos[0] + col_offset
             return left_edge < 0
-        right_edge = (
-            proposed_pos[0]
-            + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
-        )
+        col_offset = self.cur_tetromino.last_non_zero_col_per_idx[
+            self.cur_tetromino.current_position
+        ]
+        right_edge = proposed_pos[0] + col_offset
         return right_edge >= self.playfield_width
 
     def _check_if_landed(self):
