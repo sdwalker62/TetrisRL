@@ -1,15 +1,20 @@
+r"""Tetromino classes for Tetris game."""
+
 import numpy as np
 
 
 class Tetromino:
+    r"""Tetromino superclass."""
+
     positions = []
     current_position = 0
     existence_time = 0
     is_oob = False
     is_colliding = False
 
-    def __init__(self, type: str):
-        match type:
+    def __init__(self, tetromino_type: str):
+        r"""Initialize one of the subclasses."""
+        match tetromino_type:
             case "I":
                 self.__class__ = ITetromino
                 self.type = "I"
@@ -35,22 +40,28 @@ class Tetromino:
                 raise ValueError(f"Invalid tetromino type: {type}")
 
     def rotate_clockwise(self) -> np.ndarray:
+        r"""Rotate the tetromino by incrementing the position index."""
         self.current_position = (self.current_position + 1) % len(self.positions)
         return self.get_representation()
 
     def rotate_counter_clockwise(self) -> np.ndarray:
+        r"""Rotate the tetromino by decrementing the position index."""
         self.current_position = (self.current_position - 1) % len(self.positions)
         return self.get_representation()
 
     def get_representation(self) -> np.ndarray:
+        r"""Use the np.ndarray for collision detections and rendering."""
         return self.positions[self.current_position]
 
     def spawn(self) -> np.ndarray:
+        r"""Spawn with default values."""
         self.current_position = 0
         return self.positions[0]
 
 
 class ITetromino(Tetromino):
+    r"""I-shaped tetromino."""
+
     tetromino_idx = 1
     left_action_oob = [0, 2, 0, 1]
     right_action_oob = [3, 2, 3, 1]
@@ -63,6 +74,8 @@ class ITetromino(Tetromino):
 
 
 class JTetromino(Tetromino):
+    r"""J-shaped tetromino."""
+
     tetromino_idx = 2
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
@@ -73,7 +86,7 @@ class JTetromino(Tetromino):
                 [1, 0, 0],
                 [1, 1, 1],
                 [0, 0, 0],
-            ]
+            ],
         ),
         2
         * np.array(
@@ -81,7 +94,7 @@ class JTetromino(Tetromino):
                 [0, 1, 1],
                 [0, 1, 0],
                 [0, 1, 0],
-            ]
+            ],
         ),
         2
         * np.array(
@@ -89,7 +102,7 @@ class JTetromino(Tetromino):
                 [0, 0, 0],
                 [1, 1, 1],
                 [0, 0, 1],
-            ]
+            ],
         ),
         2
         * np.array(
@@ -97,12 +110,14 @@ class JTetromino(Tetromino):
                 [0, 1, 0],
                 [0, 1, 0],
                 [1, 1, 0],
-            ]
+            ],
         ),
     ]
 
 
 class LTetromino(Tetromino):
+    r"""L-shaped tetromino."""
+
     tetromino_idx = 3
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
@@ -113,7 +128,7 @@ class LTetromino(Tetromino):
                 [0, 0, 1],
                 [1, 1, 1],
                 [0, 0, 0],
-            ]
+            ],
         ),
         3
         * np.array(
@@ -121,7 +136,7 @@ class LTetromino(Tetromino):
                 [0, 1, 0],
                 [0, 1, 0],
                 [0, 1, 1],
-            ]
+            ],
         ),
         3
         * np.array(
@@ -129,7 +144,7 @@ class LTetromino(Tetromino):
                 [0, 0, 0],
                 [1, 1, 1],
                 [1, 0, 0],
-            ]
+            ],
         ),
         3
         * np.array(
@@ -137,12 +152,14 @@ class LTetromino(Tetromino):
                 [1, 1, 0],
                 [0, 1, 0],
                 [0, 1, 0],
-            ]
+            ],
         ),
     ]
 
 
 class OTetromino(Tetromino):
+    r"""O-shaped tetromino."""
+
     tetromino_idx = 4
     left_action_oob = [1, 1, 1, 1]
     right_action_oob = [2, 2, 2, 2]
@@ -153,7 +170,7 @@ class OTetromino(Tetromino):
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
-            ]
+            ],
         ),
         4
         * np.array(
@@ -161,7 +178,7 @@ class OTetromino(Tetromino):
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
-            ]
+            ],
         ),
         4
         * np.array(
@@ -169,7 +186,7 @@ class OTetromino(Tetromino):
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
-            ]
+            ],
         ),
         4
         * np.array(
@@ -177,12 +194,14 @@ class OTetromino(Tetromino):
                 [0, 1, 1, 0],
                 [0, 1, 1, 0],
                 [0, 0, 0, 0],
-            ]
+            ],
         ),
     ]
 
 
 class STetromino(Tetromino):
+    r"""S-shaped tetromino."""
+
     tetromino_idx = 5
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
@@ -193,7 +212,7 @@ class STetromino(Tetromino):
                 [0, 1, 1],
                 [1, 1, 0],
                 [0, 0, 0],
-            ]
+            ],
         ),
         5
         * np.array(
@@ -201,7 +220,7 @@ class STetromino(Tetromino):
                 [0, 1, 0],
                 [0, 1, 1],
                 [0, 0, 1],
-            ]
+            ],
         ),
         5
         * np.array(
@@ -209,7 +228,7 @@ class STetromino(Tetromino):
                 [0, 0, 0],
                 [0, 1, 1],
                 [1, 1, 0],
-            ]
+            ],
         ),
         5
         * np.array(
@@ -217,12 +236,14 @@ class STetromino(Tetromino):
                 [1, 0, 0],
                 [1, 1, 0],
                 [0, 1, 0],
-            ]
+            ],
         ),
     ]
 
 
 class TTetromino(Tetromino):
+    r"""T-shaped tetromino."""
+
     tetromino_idx = 6
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
@@ -233,7 +254,7 @@ class TTetromino(Tetromino):
                 [0, 1, 0],
                 [1, 1, 1],
                 [0, 0, 0],
-            ]
+            ],
         ),
         6
         * np.array(
@@ -241,7 +262,7 @@ class TTetromino(Tetromino):
                 [0, 1, 0],
                 [0, 1, 1],
                 [0, 1, 0],
-            ]
+            ],
         ),
         6
         * np.array(
@@ -249,7 +270,7 @@ class TTetromino(Tetromino):
                 [0, 0, 0],
                 [1, 1, 1],
                 [0, 1, 0],
-            ]
+            ],
         ),
         6
         * np.array(
@@ -257,12 +278,14 @@ class TTetromino(Tetromino):
                 [0, 1, 0],
                 [1, 1, 0],
                 [0, 1, 0],
-            ]
+            ],
         ),
     ]
 
 
 class ZTetromino(Tetromino):
+    r"""Z-shaped tetromino."""
+
     tetromino_idx = 7
     left_action_oob = [0, 1, 0, 0]
     right_action_oob = [2, 2, 2, 1]
@@ -273,7 +296,7 @@ class ZTetromino(Tetromino):
                 [1, 1, 0],
                 [0, 1, 1],
                 [0, 0, 0],
-            ]
+            ],
         ),
         7
         * np.array(
@@ -281,7 +304,7 @@ class ZTetromino(Tetromino):
                 [0, 0, 1],
                 [0, 1, 1],
                 [0, 1, 0],
-            ]
+            ],
         ),
         7
         * np.array(
@@ -289,7 +312,7 @@ class ZTetromino(Tetromino):
                 [0, 0, 0],
                 [1, 1, 0],
                 [0, 1, 1],
-            ]
+            ],
         ),
         7
         * np.array(
@@ -297,6 +320,6 @@ class ZTetromino(Tetromino):
                 [0, 1, 0],
                 [1, 1, 0],
                 [1, 0, 0],
-            ]
+            ],
         ),
     ]

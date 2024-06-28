@@ -1,11 +1,11 @@
-r"""Main gym event logic"""
+r"""Main gym event logic."""
 
 import gymnasium
 import requests
 
 
 def manual_action_parser(key: str) -> int:
-    r"""Map the keypress event to the corresponding gym action
+    r"""Map the keypress event to the corresponding gym action.
 
     ArrowLeft -> 0   (left)
     ArrowRight -> 1  (right)
@@ -16,7 +16,7 @@ def manual_action_parser(key: str) -> int:
     """
     try:
         action_id = ["ArrowLeft", "ArrowRight", "ArrowDown", " ", "ArrowUp", "z"].index(
-            key
+            key,
         )
     except ValueError:
         action_id = 2
@@ -26,15 +26,15 @@ def manual_action_parser(key: str) -> int:
 if __name__ == "__main__":
     MODE = "human"
     env = gymnasium.make(
-        "env:Tetris-v0", render_mode="web_viewer", manual_play=MODE == "human"
+        "env:Tetris-v0",
+        render_mode="web_viewer",
+        manual_play=MODE == "human",
     )
     env.reset()
     CONTINUE_GAME = True
     while CONTINUE_GAME:
         if MODE == "human":
-            action_data = requests.get(
-                "http://localhost:8000/tetris/action", timeout=100
-            )
+            action_data = requests.get("http://localhost:8000/tetris/action", timeout=100)
             action_key = action_data.json()["action"]
             ACTION = manual_action_parser(action_key)
             playfield = env.step(ACTION)

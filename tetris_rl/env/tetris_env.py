@@ -153,9 +153,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         proposed_pos = self._move(action)
 
         # Check if proposed move is out of bounds
-        pos_oob = action in [0, 1] and self._check_if_oob(proposed_pos, action == 0)
+        is_oob = action in [0, 1] and self._check_if_oob(proposed_pos, action == 0)
 
-        if not pos_oob:
+        if not is_oob:
             self.cur_tetromino.x = proposed_pos[0]
             self.cur_tetromino.y = proposed_pos[1]
             if self.render_mode == "web_viewer":
@@ -200,13 +200,11 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
                 proposed_pos[0]
                 + self.cur_tetromino.left_action_oob[self.cur_tetromino.current_position]
             )
-            print(f"Collided w/ left edge: {left_edge < 0}")
             return left_edge < 0
         right_edge = (
             proposed_pos[0]
             + self.cur_tetromino.right_action_oob[self.cur_tetromino.current_position]
         )
-        print(f"Collided w/ right edge: {right_edge >= self.playfield_width}")
         return right_edge >= self.playfield_width
 
     def _check_if_landed(self):
