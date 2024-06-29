@@ -130,10 +130,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             information about the current episode including the next state
 
         """
-        # Check if the bag needs refilling
-        if len(self.bag) == 0:
-            self.bag = self._refill_bag()
-
         self._update_gravity()
 
         # From looking at the online tetris, there is always a gravity applied
@@ -150,6 +146,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         #       If landed, update statistics
         #   Spawn new piece
 
+        is_oob, is_colliding = False, False
         proposed_pos = self._move(action)
 
         # Cases:
@@ -165,27 +162,42 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             is_colliding = self._check_if_collision(proposed_pos)
 
         # Case 3: Landing
-        if self._check_if_landed(proposed_pos):
+        if not is_colliding and self._check_if_landed(proposed_pos):
             self.playfield += self.ghost_playfield
-            self._spawn_tetromino()
-            # self._clear_lines()
+            self._handle_step_end(True)
             return self.playfield, 0, False, False, {}
 
+        # Action down would cause the piece to collide with another
         if is_colliding and action == 2:
-            proposed_pos = self.cur_tetromino.x, self.cur_tetromino.y
+            print("Colliding")
+            self._update_ghost((self.cur_tetromino.x, self.cur_tetromino.y))
+            self.playfield += self.ghost_playfield
+            self._handle_step_end(True)
+            return self.playfield, 0, False, False, {}
 
         if not is_oob and not is_colliding:
             self._perform_move(proposed_pos)
-
-            if self.render_mode == "web_viewer":
-                self.render()
+            self._handle_step_end()
 
         return self.playfield, 0, False, False, {}
+
+    def _handle_step_end(self, should_spawn_next_piece: bool = False):
+        r"""Handle the end of a step in the environment."""
+        is_game_over = False
+        if not is_game_over and should_spawn_next_piece:
+            # Check if the bag needs refilling
+            if len(self.bag) == 1:
+                self.bag += self._refill_bag()
+            self._spawn_tetromino()
+
+        if self.render_mode == "web_viewer":
+            self.render()
 
     def _perform_move(self, proposed_pos):
         r"""Update the playfield and ghost playfield."""
         self.cur_tetromino.x = proposed_pos[0]
         self.cur_tetromino.y = proposed_pos[1]
+        self._update_ghost(proposed_pos)
 
     def _update_gravity(self):
         r"""Update the gravity value based on the current level.
@@ -334,9 +346,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def _create_new_ghost_playfield(self):
         return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
-    def _update_ghost(self, shift: tuple):
+    def _update_ghost(self, proposed_pos: tuple[int]):
         r"""Update the ghost piece to reflect the current position of the active piece."""
-        self.ghost_playfield = np.roll(self.ghost_playfield, shift)
+        r = self.cur_tetromino.get_representation()
+        x, y = proposed_pos[0], proposed_pos[1]
+        self.ghost_playfield = self._create_new_ghost_playfield()
+        self.ghost_playfield[y : y + r.shape[0], x : x + r.shape[1]] += r
 
     def _check_if_game_over(self):
         r"""Check if a terminal condition has been met.
