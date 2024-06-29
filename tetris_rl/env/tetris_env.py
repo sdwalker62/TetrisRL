@@ -152,19 +152,40 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         proposed_pos = self._move(action)
 
-        # Check if proposed move is out of bounds
-        is_oob = action in [0, 1] and self._check_if_oob(proposed_pos, action == 0)
-        has_landed = self._check_if_landed()
-        if has_landed:
-            self._spawn_tetromino()
+        # Cases:
+        # 1. Proposed move would cause the tetromino to go OOB
+        # 2. Proposed move would cause the tetromino to collide
+        # 3. Proposed move would cause the tetromino to land
 
-        if not is_oob and not has_landed:
-            self.cur_tetromino.x = proposed_pos[0]
-            self.cur_tetromino.y = proposed_pos[1]
+        # Case 1: OOB
+        is_oob = self._check_if_oob(proposed_pos, action)
+
+        # Case 2: Collision
+        if not is_oob:
+            is_colliding = self._check_if_collision(proposed_pos)
+
+        # Case 3: Landing
+        if self._check_if_landed(proposed_pos):
+            self.playfield += self.ghost_playfield
+            self._spawn_tetromino()
+            # self._clear_lines()
+            return self.playfield, 0, False, False, {}
+
+        if is_colliding and action == 2:
+            proposed_pos = self.cur_tetromino.x, self.cur_tetromino.y
+
+        if not is_oob and not is_colliding:
+            self._perform_move(proposed_pos)
+
             if self.render_mode == "web_viewer":
                 self.render()
 
         return self.playfield, 0, False, False, {}
+
+    def _perform_move(self, proposed_pos):
+        r"""Update the playfield and ghost playfield."""
+        self.cur_tetromino.x = proposed_pos[0]
+        self.cur_tetromino.y = proposed_pos[1]
 
     def _update_gravity(self):
         r"""Update the gravity value based on the current level.
@@ -196,28 +217,28 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             case _:
                 return self.cur_tetromino.x, self.cur_tetromino.y + 1
 
-    def _check_if_oob(self, proposed_pos: tuple, move_left: bool):
-        r"""Check if the current tetromino in play is out of bounds."""
-        if move_left:
-            col_offset = self.cur_tetromino.first_non_zero_col_per_idx[
-                self.cur_tetromino.current_position
-            ]
-            left_edge = proposed_pos[0] + col_offset
-            return left_edge < 0
-        col_offset = self.cur_tetromino.last_non_zero_col_per_idx[
-            self.cur_tetromino.current_position
-        ]
-        right_edge = proposed_pos[0] + col_offset
-        return right_edge >= self.playfield_width
+    def _check_if_oob(self, proposed_pos: tuple[int], action: int):
+        r"""Check if the proposed tetromino position is out of bounds."""
+        x, y = proposed_pos[0], proposed_pos[1]
+        match action:
+            case 0:  # left
+                return x < 0
+            case 1:  # right
+                return x + self.cur_tetromino.width > self.playfield_width
+            case 2:  # soft-drop
+                return (
+                    y + self.cur_tetromino.height
+                    > self.visual_height + self.buffer_height
+                )
 
-    def _check_if_landed(self) -> bool:
+    def _check_if_landed(self, proposed_move: tuple[int]) -> bool:
         r"""Check if the current tetromino in play has landed on the playfield."""
-        bottom = self.cur_tetromino.y + self.cur_tetromino.height
-        if bottom == self.visual_height + self.buffer_height:
+        bottom = proposed_move[1] + self.cur_tetromino.height
+        if bottom > self.visual_height + self.buffer_height:
             return True
         return False
 
-    def _check_if_collision(self) -> bool:
+    def _check_if_collision(self, proposed_pos: tuple[int]) -> bool:
         r"""Check if the current tetromino is colliding.
 
         This will also be used for wall kicks.
@@ -266,6 +287,24 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
         """
+        # self.ghost_playfield = self._create_new_ghost_playfield()
+        collision_mask = np.zeros(
+            (self.visual_height + self.buffer_height, self.playfield_width)
+        )
+        r = self.cur_tetromino.get_representation()
+        x, y = proposed_pos[0], proposed_pos[1]
+        try:
+            collision_mask[y : y + r.shape[0], x : x + r.shape[1]] += r
+        except ValueError as e:
+            print(e)
+            print(f"y: {y}, x: {x}")
+            print(r.shape)
+            print(f"rows_start: {y}, rows_end: {y + r.shape[0]}")
+            print(f"cols_start: {x}, cols_end: {x + r.shape[1]}")
+            print(f"proposed_pos: {proposed_pos}")
+            print(f"playfield shape: {self.playfield.shape}")
+            print(collision_mask)
+            exit()
         return np.any(np.logical_and(self.ghost_playfield > 0, self.playfield > 0))
 
     def _spawn_tetromino(self) -> None:

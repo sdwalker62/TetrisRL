@@ -53,7 +53,7 @@ class Tetromino:
 
     def get_representation(self) -> np.ndarray:
         r"""Use the np.ndarray for collision detections and rendering."""
-        return self.trim(self.positions[self.current_position])
+        return self.trim(self.trim(self.positions[self.current_position]))
 
     def spawn(self) -> np.ndarray:
         r"""Spawn with default values."""
