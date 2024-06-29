@@ -19,7 +19,7 @@ def manual_action_parser(key: str) -> int:
             key,
         )
     except ValueError:
-        action_id = 2
+        action_id = -1
     return action_id
 
 
