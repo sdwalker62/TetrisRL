@@ -93,32 +93,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Take a single step of the environment.
 
-        Actions every step
-        ------------------
-        Note: Steps should align with the tick rate of the game!
-
-        1. [ ] Retrieve current_level and calculate gravity, store gravity value
-            a. Every step may not apply gravity, check the stored gravity value
-            b. Compare the stored gravity value with the step number
-            c. Move down when step mod gravity rate == 0
-        2. [ ] Calculate proposed position from action
-            a. Check if the proposed move causes a collision
-                i. If the action is a rotation, check for wall kicks (optional)
-                ii. If the collision is below, the piece has landed
-            b. If it is a left or right move, check if it is out of bounds
-                i. If it is out of bounds, do not move the piece
-            c. Check if the piece has landed on the ground
-        3. [ ] Update the position of the current piece with the proposed
-        4. [ ] Check for line clears
-        5. [ ] Check for game over
-        6. [ ] Spawn a new piece
-        7. [ ] Calculate score
-        8. [ ] Calculate level
-            a. Update gravity
-        9. [ ] Update linesCleared
-        10. [ ] Stream statistics to the frontend
-        11. [ ] Render the playfield
-
         Parameters
         ----------
         action : int
@@ -131,28 +105,13 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         """
         self._update_gravity()
-
-        is_oob, is_colliding = False, False
         proposed_pos = self._move(action)
 
         # Check conditions
-        is_oob = self._check_if_oob(proposed_pos, action)
-        is_colliding = self._check_if_collision(proposed_pos)
-        is_invalid_move = is_oob or is_colliding
-        has_landed = self._check_if_landed(proposed_pos)
-
-        if not is_invalid_move:
-            # Handle Landing
-            if has_landed:
-                self._perform_move(proposed_pos)
-                self.playfield += self.ghost_playfield
-                self._handle_step_end(True)
-                return self.playfield, 0, False, False, {}
-
+        if self._check_if_valid_pos(proposed_pos, action):
             self._perform_move(proposed_pos)
-
-            # Check if the current tetromino is on top of another tetromino
-            if self._is_on_another_tetromino():
+            # Handle terminal conditions
+            if self._check_terminal_conditions(proposed_pos):
                 self.playfield += self.ghost_playfield
                 self._handle_step_end(True)
                 return self.playfield, 0, False, False, {}
@@ -160,6 +119,17 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             self._handle_step_end()
 
         return self.playfield, 0, False, False, {}
+
+    def _check_terminal_conditions(self, proposed_pos: tuple[int]) -> bool:
+        r"""Check if the episode is over."""
+        return self._check_if_landed(proposed_pos) or self._is_on_another_tetromino()
+
+    def _check_if_valid_pos(self, proposed_pos: tuple[int], action: int) -> bool:
+        r"""Check if the proposed position is valid."""
+        return not self._check_if_oob(
+            proposed_pos,
+            action,
+        ) and not self._check_if_collision(proposed_pos)
 
     def _is_on_another_tetromino(self):
         r"""Check if the current tetromino is on top of another tetromino."""
