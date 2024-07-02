@@ -91,6 +91,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.should_spawn_next_piece = False
         self.projection = None
         self.prev_projection = None
+        self.prev_tetromino_rotation = 0
 
     def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Take a single step of the environment.
@@ -108,6 +109,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         """
         self._update_gravity()
         self.prev_projection = self.projection.copy()
+        self.prev_tetromino = self.cur_tetromino
         proposed_pos = self._move(action)
 
         # Check conditions
@@ -121,6 +123,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             self._handle_step_end()
         else:
             self.projection = self.prev_projection
+            print(self.prev_tetromino.arr)
+            print(self.prev_tetromino.current_position)
+            self.cur_tetromino = self.prev_tetromino
 
         return self.playfield, 0, False, False, {}
 
@@ -134,11 +139,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _is_on_another_tetromino(self):
         r"""Check if the current tetromino is on top of another tetromino."""
-        # proposed_pos = self.cur_tetromino.x, self.cur_tetromino.y + 1
-        # collision_mask = self._init_playfield()
-        # collision_mask = self._add_piece_to_playfield(collision_mask, proposed_pos)
-
-        # return self._is_colliding(collision_mask)
         self._shift_projection_down()
         is_colliding = self._is_colliding()
         self._shift_projection_up()
@@ -154,8 +154,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _handle_step_end(self, should_spawn_next_piece: bool = False):
         r"""Handle the end of a step in the environment."""
-        # TODO: Check for game end
-        is_game_over = False
+        is_game_over = self._check_if_game_over()
         if not is_game_over:
             self._clear_lines()
             if should_spawn_next_piece:
@@ -163,7 +162,11 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
                 # Check if the bag needs refilling first
                 if len(self.bag) == 1:
                     self.bag += self._refill_bag()
-                self._spawn_tetromino()
+                able_to_spawn = self._spawn_tetromino()
+                if not able_to_spawn:
+                    self._handle_game_over()
+        else:
+            self._handle_game_over()
 
         if self.render_mode == "web_viewer":
             self.render()
@@ -214,10 +217,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def _check_if_landed(self) -> bool:
         r"""Check if the current tetromino in play has landed on the playfield."""
-        # bottom = proposed_move[1] + self.cur_tetromino.height
-        # if bottom >= self.visual_height + self.buffer_height:
-        #     return True
-        # return False
         return np.sum(self.projection[-1, :]) > 0
 
     def _is_colliding(self) -> bool:
@@ -269,11 +268,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
         """
-        # collision_mask = self._init_playfield()
-        # collision_mask = self._add_piece_to_playfield(collision_mask, proposed_pos)
         return np.any(np.logical_and(self.projection > 0, self.playfield > 0))
 
-    def _spawn_tetromino(self) -> None:
+    def _spawn_tetromino(self) -> bool:
         r"""Spawn a new tetromino at the top of the playfield.
 
         All tetrominos spawn on rows 21 and 22 of the playfield as per the
@@ -284,13 +281,15 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.cur_tetromino = self.bag.pop(0)
         # remember that rows technically represent the y-axis not the x-axis
         self.cur_tetromino.x = 3
-        self.cur_tetromino.y = 19 if self.cur_tetromino.type in ["I", "O"] else 19
+        self.cur_tetromino.y = 19 if self.cur_tetromino.type == "I" else 20
 
         _repr = self.cur_tetromino.arr
         self.cur_tetromino.height = _repr.shape[0]
         self.cur_tetromino.width = _repr.shape[1]
-        # Create the ghost that we will use for collision detection
+        # Create the projection that we will use for collision detection
         self._create_projection((self.cur_tetromino.x, self.cur_tetromino.y))
+
+        return not self._is_colliding()
 
     def _add_piece_to_playfield(
         self,
@@ -309,7 +308,8 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         try:
             self.projection = self._add_piece_to_playfield(arr, new_pos)
             return True
-        except ValueError:
+        except ValueError as e:
+            print(f"tetris_env:_create_projection error: {e}")
             return False
 
     def _shift_projection_left(self):
@@ -344,6 +344,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
             2. A piece locks completely above the visible portion of the playfield.
             3. A piece is pished above the 20-row buffer zone.
         """
+        return np.sum(self.projection[19, :]) > 0
+
+    def _handle_game_over(self):
+        r"""Handle the game over condition."""
+        print("Game over!")
+        exit()
 
     def _init_playfield(self) -> np.ndarray:
         r"""Create a default playfield with no tetrominos."""
@@ -378,17 +384,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend."""
-        # pos = self.cur_tetromino.x, self.cur_tetromino.y
-        # arr = self.playfield.copy()
-        # arr = self._add_piece_to_playfield(arr, pos)
         arr = self.playfield + self.projection
-
-        # _repr = self.cur_tetromino.arr
-
-        # arr[
-        #     self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
-        #     self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
-        # ] += _repr
         arr = arr[20:]  # only render the viewable portion of the playfield
         time.sleep(1 / self.metadata["render_fps"])
         requests.post(
