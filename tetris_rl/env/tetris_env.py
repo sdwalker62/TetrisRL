@@ -187,6 +187,77 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         #     self.current_level - 1
         # )
 
+    def _srs_position_test(self, new_pos: tuple[int]) -> bool:
+        r"""Test the new position for wall kicks."""
+        shift_x, shift_y = new_pos
+        projection_copy = self.projection.copy()
+        match shift_x:
+            case 1:
+                self._shift_projection_right()
+            case -1:
+                self._shift_projection_left()
+
+        match shift_y:
+            case 1:
+                self._shift_projection_up()
+            case -1:
+                self._shift_projection_down()
+
+        is_valid = self._is_oob() or self._is_colliding
+        self.projection = projection_copy
+        return is_valid
+
+    def super_rotation_system(self, clockwise_rot: bool):
+        r"""Perform a series of tests for wall kicks."""
+        if self.cur_tetromino.type == "O":
+            pass
+
+        # Cases for tetrominos J, L, S, T, Z
+        if self.cur_tetromino in ["J", "L", "S", "T", "Z"]:
+            if self.cur_tetromino.current_position == 0:  # 0
+                if clockwise_rot:  # 0 -> R
+                    order = [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]
+                else:  # 0 -> L
+                    order = [(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)]
+            if self.cur_tetromino.current_position == 1:  # R
+                if clockwise_rot:  # R -> 2
+                    order = [(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)]
+                else:  # R -> 0
+                    order = [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]
+            if self.cur_tetromino.current_position == 3:  # L
+                if clockwise_rot:  # L -> 0
+                    order = [(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)]
+                else:  # L -> 2
+                    order = [(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)]
+            if self.cur_tetromino.current_position == 2:  # 2
+                if clockwise_rot:  # 2 -> L
+                    order = [(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)]
+                else:  # 2 -> R
+                    order = [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]
+
+        # Tetromino I has a different set of checks
+        if self.cur_tetromino.type == "I":
+            if self.cur_tetromino.current_position == 0:  # 0
+                if clockwise_rot:  # 0 -> R
+                    order = [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)]
+                else:  # 0 -> L
+                    order = [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)]
+            if self.cur_tetromino.current_position == 1:  # R
+                if clockwise_rot:  # R -> 2
+                    order = [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)]
+                else:  # R -> 0
+                    order = [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)]
+            if self.cur_tetromino.current_position == 3:  # L
+                if clockwise_rot:  # L -> 0
+                    order = [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)]
+                else:  # L -> 2
+                    order = [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)]
+            if self.cur_tetromino.current_position == 2:  # 2
+                if clockwise_rot:  # 2 -> L
+                    order = [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)]
+                else:  # 2 -> R
+                    order = [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)]
+
     def _move(self, action) -> tuple[int, int]:
         match action:
             case 0:  # left
