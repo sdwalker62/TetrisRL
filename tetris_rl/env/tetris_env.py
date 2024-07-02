@@ -188,10 +188,10 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
                 pass
             case 4:  # clockwise rotation
                 self.cur_tetromino.rotate_clockwise()
-                return self.cur_tetromino.x, self.cur_tetromino.y + 1
+                return self.cur_tetromino.x, self.cur_tetromino.y
             case 5:  # counter-clockwise rotation
                 self.cur_tetromino.rotate_counter_clockwise()
-                return self.cur_tetromino.x, self.cur_tetromino.y + 1
+                return self.cur_tetromino.x, self.cur_tetromino.y
             case _:
                 return self.cur_tetromino.x, self.cur_tetromino.y
 
@@ -271,19 +271,23 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         collision_mask = np.zeros(
             (self.visual_height + self.buffer_height, self.playfield_width),
         )
-        r = self.cur_tetromino.get_representation()
+        _repr = self.cur_tetromino.arr
         x, y = proposed_pos[0], proposed_pos[1]
         try:
-            collision_mask[y : y + r.shape[0], x : x + r.shape[1]] += r
+            collision_mask[y : y + _repr.shape[0], x : x + _repr.shape[1]] += _repr
         except ValueError as e:
+            print("\n")
+            print("#####################################################################")
             print(e)
-            print(f"y: {y}, x: {x}")
-            print(r.shape)
-            print(f"rows_start: {y}, rows_end: {y + r.shape[0]}")
-            print(f"cols_start: {x}, cols_end: {x + r.shape[1]}")
-            print(f"proposed_pos: {proposed_pos}")
-            print(f"playfield shape: {self.playfield.shape}")
+            print("#####################################################################")
+            print(f"Proposed position: y: {y}, x: {x}")
+            print(f"Representation shape: {_repr.shape}")
+            print(f"rows_start: {y}, rows_end: {y + _repr.shape[0]}")
+            print(f"cols_start: {x}, cols_end: {x + _repr.shape[1]}")
+            print(f"Playfield shape: {self.playfield.shape}")
+            print("#####################################################################")
             print(collision_mask)
+            print("\n")
             exit()
         return np.any(np.logical_and(collision_mask > 0, self.playfield > 0))
 
@@ -301,25 +305,25 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.cur_tetromino.y = 19 if self.cur_tetromino.type in ["I", "O"] else 19
 
         # grab the np.ndarray representation of the current piece
-        r = self.cur_tetromino.get_representation()
-        self.cur_tetromino.height = r.shape[0]
-        self.cur_tetromino.width = r.shape[1]
+        _repr = self.cur_tetromino.arr
+        self.cur_tetromino.height = _repr.shape[0]
+        self.cur_tetromino.width = _repr.shape[1]
         # Create the ghost that we will use for collision detection
         self.ghost_playfield = self._create_new_ghost_playfield()
         self.ghost_playfield[
-            self.cur_tetromino.y : self.cur_tetromino.y + r.shape[0],
-            self.cur_tetromino.x : self.cur_tetromino.x + r.shape[1],
-        ] += r
+            self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
+            self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
+        ] += _repr
 
     def _create_new_ghost_playfield(self):
         return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
 
     def _update_ghost(self, proposed_pos: tuple[int]):
         r"""Update the ghost piece to reflect the current position of the active piece."""
-        r = self.cur_tetromino.get_representation()
+        _repr = self.cur_tetromino.arr
         x, y = proposed_pos[0], proposed_pos[1]
         self.ghost_playfield = self._create_new_ghost_playfield()
-        self.ghost_playfield[y : y + r.shape[0], x : x + r.shape[1]] += r
+        self.ghost_playfield[y : y + _repr.shape[0], x : x + _repr.shape[1]] += _repr
 
     def _check_if_game_over(self):
         r"""Check if a terminal condition has been met.
@@ -363,12 +367,12 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend."""
-        r = self.cur_tetromino.get_representation()
+        _repr = self.cur_tetromino.arr
         arr = self.playfield.copy()
         arr[
-            self.cur_tetromino.y : self.cur_tetromino.y + r.shape[0],
-            self.cur_tetromino.x : self.cur_tetromino.x + r.shape[1],
-        ] += r
+            self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
+            self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
+        ] += _repr
         arr = arr[20:]  # only render the viewable portion of the playfield
         time.sleep(1 / self.metadata["render_fps"])
         requests.post(
@@ -392,7 +396,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         requests.post(
             "http://localhost:8000/tetris/next_tetromino",
             data=json.dumps(
-                {"representation": self.bag[0].get_representation().tolist()},
+                {"representation": self.bag[0].arr.tolist()},
             ),
             headers={"Content-Type": "application/json"},
             timeout=TIME_OUT,
