@@ -89,6 +89,8 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.current_level = 0
         self.gravity = 0
         self.should_spawn_next_piece = False
+        self.projection = None
+        self.prev_projection = None
 
     def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Take a single step of the environment.
@@ -105,36 +107,42 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
         """
         self._update_gravity()
+        self.prev_projection = self.projection.copy()
         proposed_pos = self._move(action)
 
         # Check conditions
-        if self._check_if_valid_pos(proposed_pos, action):
+        if self._check_if_valid_pos():
             self._perform_move(proposed_pos)
             # Handle terminal conditions
-            if self._check_terminal_conditions(proposed_pos):
-                self.playfield += self.ghost_playfield
+            if self._check_terminal_conditions():
                 self._handle_step_end(True)
                 return self.playfield, 0, False, False, {}
 
             self._handle_step_end()
+        else:
+            self.projection = self.prev_projection
 
         return self.playfield, 0, False, False, {}
 
-    def _check_terminal_conditions(self, proposed_pos: tuple[int]) -> bool:
+    def _check_terminal_conditions(self) -> bool:
         r"""Check if the episode is over."""
-        return self._check_if_landed(proposed_pos) or self._is_on_another_tetromino()
+        return self._check_if_landed() or self._is_on_another_tetromino()
 
-    def _check_if_valid_pos(self, proposed_pos: tuple[int], action: int) -> bool:
+    def _check_if_valid_pos(self) -> bool:
         r"""Check if the proposed position is valid."""
-        return not self._check_if_oob(
-            proposed_pos,
-            action,
-        ) and not self._check_if_collision(proposed_pos)
+        return not self._is_oob() and not self._is_colliding()
 
     def _is_on_another_tetromino(self):
         r"""Check if the current tetromino is on top of another tetromino."""
-        proposed_pos = self.cur_tetromino.x, self.cur_tetromino.y + 1
-        return self._check_if_collision(proposed_pos)
+        # proposed_pos = self.cur_tetromino.x, self.cur_tetromino.y + 1
+        # collision_mask = self._init_playfield()
+        # collision_mask = self._add_piece_to_playfield(collision_mask, proposed_pos)
+
+        # return self._is_colliding(collision_mask)
+        self._shift_projection_down()
+        is_colliding = self._is_colliding()
+        self._shift_projection_up()
+        return is_colliding
 
     def _clear_lines(self):
         r"""Check for completed lines and clear them."""
@@ -151,6 +159,7 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         if not is_game_over:
             self._clear_lines()
             if should_spawn_next_piece:
+                self.playfield += self.projection
                 # Check if the bag needs refilling first
                 if len(self.bag) == 1:
                     self.bag += self._refill_bag()
@@ -163,7 +172,6 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         r"""Update the playfield and ghost playfield."""
         self.cur_tetromino.x = proposed_pos[0]
         self.cur_tetromino.y = proposed_pos[1]
-        self._update_ghost(proposed_pos)
 
     def _update_gravity(self):
         r"""Update the gravity value based on the current level.
@@ -179,46 +187,40 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
     def _move(self, action) -> tuple[int, int]:
         match action:
             case 0:  # left
+                self._shift_projection_left()
                 return self.cur_tetromino.x - 1, self.cur_tetromino.y
             case 1:  # right
+                self._shift_projection_right()
                 return self.cur_tetromino.x + 1, self.cur_tetromino.y
             case 2:  # soft-drop
+                self._shift_projection_down()
                 return self.cur_tetromino.x, self.cur_tetromino.y + 1
             case 3:  # hard-drop
                 pass
             case 4:  # clockwise rotation
                 self.cur_tetromino.rotate_clockwise()
+                self._create_projection((self.cur_tetromino.x, self.cur_tetromino.y))
                 return self.cur_tetromino.x, self.cur_tetromino.y
             case 5:  # counter-clockwise rotation
                 self.cur_tetromino.rotate_counter_clockwise()
+                self._create_projection((self.cur_tetromino.x, self.cur_tetromino.y))
                 return self.cur_tetromino.x, self.cur_tetromino.y
             case _:
                 return self.cur_tetromino.x, self.cur_tetromino.y
 
-    def _check_if_oob(self, proposed_pos: tuple[int], action: int):
+    def _is_oob(self):
         r"""Check if the proposed tetromino position is out of bounds."""
-        x, y = proposed_pos[0], proposed_pos[1]
-        match action:
-            case 0:  # left
-                return x < 0
-            case 1:  # right
-                return x + self.cur_tetromino.width > self.playfield_width
-            case 2:  # soft-drop
-                return (
-                    y + self.cur_tetromino.height
-                    > self.visual_height + self.buffer_height
-                )
-            case _:
-                return False
+        return np.sum(self.projection > 0) != 4
 
-    def _check_if_landed(self, proposed_move: tuple[int]) -> bool:
+    def _check_if_landed(self) -> bool:
         r"""Check if the current tetromino in play has landed on the playfield."""
-        bottom = proposed_move[1] + self.cur_tetromino.height
-        if bottom >= self.visual_height + self.buffer_height:
-            return True
-        return False
+        # bottom = proposed_move[1] + self.cur_tetromino.height
+        # if bottom >= self.visual_height + self.buffer_height:
+        #     return True
+        # return False
+        return np.sum(self.projection[-1, :]) > 0
 
-    def _check_if_collision(self, proposed_pos: tuple[int]) -> bool:
+    def _is_colliding(self) -> bool:
         r"""Check if the current tetromino is colliding.
 
         This will also be used for wall kicks.
@@ -267,29 +269,9 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         np.any(np.logical_and(board1 > 0, board2 > 0)) = True
 
         """
-        # self.ghost_playfield = self._create_new_ghost_playfield()
-        collision_mask = np.zeros(
-            (self.visual_height + self.buffer_height, self.playfield_width),
-        )
-        _repr = self.cur_tetromino.arr
-        x, y = proposed_pos[0], proposed_pos[1]
-        try:
-            collision_mask[y : y + _repr.shape[0], x : x + _repr.shape[1]] += _repr
-        except ValueError as e:
-            print("\n")
-            print("#####################################################################")
-            print(e)
-            print("#####################################################################")
-            print(f"Proposed position: y: {y}, x: {x}")
-            print(f"Representation shape: {_repr.shape}")
-            print(f"rows_start: {y}, rows_end: {y + _repr.shape[0]}")
-            print(f"cols_start: {x}, cols_end: {x + _repr.shape[1]}")
-            print(f"Playfield shape: {self.playfield.shape}")
-            print("#####################################################################")
-            print(collision_mask)
-            print("\n")
-            exit()
-        return np.any(np.logical_and(collision_mask > 0, self.playfield > 0))
+        # collision_mask = self._init_playfield()
+        # collision_mask = self._add_piece_to_playfield(collision_mask, proposed_pos)
+        return np.any(np.logical_and(self.projection > 0, self.playfield > 0))
 
     def _spawn_tetromino(self) -> None:
         r"""Spawn a new tetromino at the top of the playfield.
@@ -304,26 +286,55 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
         self.cur_tetromino.x = 3
         self.cur_tetromino.y = 19 if self.cur_tetromino.type in ["I", "O"] else 19
 
-        # grab the np.ndarray representation of the current piece
         _repr = self.cur_tetromino.arr
         self.cur_tetromino.height = _repr.shape[0]
         self.cur_tetromino.width = _repr.shape[1]
         # Create the ghost that we will use for collision detection
-        self.ghost_playfield = self._create_new_ghost_playfield()
-        self.ghost_playfield[
-            self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
-            self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
-        ] += _repr
+        self._create_projection((self.cur_tetromino.x, self.cur_tetromino.y))
 
-    def _create_new_ghost_playfield(self):
-        return np.zeros((self.visual_height + self.buffer_height, self.playfield_width))
+    def _add_piece_to_playfield(
+        self,
+        playfield: np.array,
+        position: tuple[int],
+    ) -> np.ndarray:
+        r"""Add the current tetromino to the playfield."""
+        r = self.cur_tetromino.arr
+        x, y = position
+        playfield[y : y + r.shape[0], x : x + r.shape[1]] += r
+        return playfield
 
-    def _update_ghost(self, proposed_pos: tuple[int]):
+    def _create_projection(self, new_pos: tuple[int]) -> bool:
         r"""Update the ghost piece to reflect the current position of the active piece."""
-        _repr = self.cur_tetromino.arr
-        x, y = proposed_pos[0], proposed_pos[1]
-        self.ghost_playfield = self._create_new_ghost_playfield()
-        self.ghost_playfield[y : y + _repr.shape[0], x : x + _repr.shape[1]] += _repr
+        arr = self._init_playfield()
+        try:
+            self.projection = self._add_piece_to_playfield(arr, new_pos)
+            return True
+        except ValueError:
+            return False
+
+    def _shift_projection_left(self):
+        r"""Shift the columns of the projection one unit to the left."""
+        arr = np.roll(self.projection, -1, axis=1)
+        arr[:, -1] = 0
+        self.projection = arr
+
+    def _shift_projection_right(self):
+        r"""Shift the columns of the projection one unit to the right."""
+        arr = np.roll(self.projection, 1, axis=1)
+        arr[:, 0] = 0
+        self.projection = arr
+
+    def _shift_projection_down(self):
+        r"""Shift the columns of the projection one unit down."""
+        arr = np.roll(self.projection, 1, axis=0)
+        arr[0, :] = 0
+        self.projection = arr
+
+    def _shift_projection_up(self):
+        r"""Shift the columns of the projection one unit up."""
+        arr = np.roll(self.projection, -1, axis=0)
+        arr[-1, :] = 0
+        self.projection = arr
 
     def _check_if_game_over(self):
         r"""Check if a terminal condition has been met.
@@ -367,12 +378,17 @@ class TetrisEnv(Env):  # pylint: disable=too-many-instance-attributes
 
     def render(self) -> np.ndarray:
         r"""Render a single frame for the frontend."""
-        _repr = self.cur_tetromino.arr
-        arr = self.playfield.copy()
-        arr[
-            self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
-            self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
-        ] += _repr
+        # pos = self.cur_tetromino.x, self.cur_tetromino.y
+        # arr = self.playfield.copy()
+        # arr = self._add_piece_to_playfield(arr, pos)
+        arr = self.playfield + self.projection
+
+        # _repr = self.cur_tetromino.arr
+
+        # arr[
+        #     self.cur_tetromino.y : self.cur_tetromino.y + _repr.shape[0],
+        #     self.cur_tetromino.x : self.cur_tetromino.x + _repr.shape[1],
+        # ] += _repr
         arr = arr[20:]  # only render the viewable portion of the playfield
         time.sleep(1 / self.metadata["render_fps"])
         requests.post(
